@@ -15,7 +15,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from _pb_config import (
+from pb_config import (
     pb_request, get_superuser_token, print_result, PBRequestError,
 )
 

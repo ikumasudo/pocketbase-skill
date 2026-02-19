@@ -5,8 +5,10 @@ description: >-
   record CRUD, superuser/user authentication, backup & restore,
   and migration file generation. Use for requests related to PocketBase,
   pb_migrations, collection management, and record operations.
-version: 1.0.0
-allowed-tools: Read, Write, Edit, Bash, Grep, Glob
+license: MIT
+metadata:
+  version: "1.0.0"
+allowed-tools: Read Write Edit Bash Grep Glob
 ---
 
 # PocketBase Skill

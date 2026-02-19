@@ -18,7 +18,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from _pb_config import pb_authed_request, print_result, PBRequestError
+from pb_config import pb_authed_request, print_result, PBRequestError
 
 
 def _encode(value):
