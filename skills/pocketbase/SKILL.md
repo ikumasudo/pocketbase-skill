@@ -19,7 +19,48 @@ Skill for operating a PocketBase v0.23+ backend via REST API. Uses Python script
 ## 0. Design Workflow & Decision Making
 
 **Read `references/gotchas.md` FIRST** before writing any PocketBase code.
-Your training data likely contains outdated v0.22 patterns that will fail on v0.23+.
+Your training data contains outdated v0.22 patterns that will fail on v0.23+.
+Check field JSON: ensure properties are **flat** (no `options` wrapper) and collection key is `fields` (not `schema`).
+
+### ⚠️ v0.22 Anti-Patterns — DO NOT USE
+
+**Field properties must be FLAT — `options` wrapper was removed in v0.23+:**
+
+```json
+// WRONG (v0.22) — "options" wrapper does not exist in v0.23+
+{"name": "status", "type": "select", "options": {"values": ["draft", "published"], "maxSelect": 1}}
+{"name": "avatar", "type": "file", "options": {"maxSelect": 1, "maxSize": 5242880}}
+{"name": "author", "type": "relation", "options": {"collectionId": "...", "maxSelect": 1}}
+
+// CORRECT (v0.23+) — all properties are top-level (flat)
+{"name": "status", "type": "select", "values": ["draft", "published"], "maxSelect": 1}
+{"name": "avatar", "type": "file", "maxSelect": 1, "maxSize": 5242880}
+{"name": "author", "type": "relation", "collectionId": "...", "maxSelect": 1}
+```
+
+Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, maxSize, mimeTypes, thumbs), `relation` (collectionId, maxSelect), `text` (min, max, pattern).
+
+**Collection JSON: use `fields` key, not `schema`:**
+
+```json
+// WRONG: {"name": "posts", "type": "base", "schema": [...]}
+// CORRECT: {"name": "posts", "type": "base", "fields": [...]}
+```
+
+**Migration JS: use typed constructors, not `SchemaField`:**
+
+```js
+// WRONG:   collection.schema.addField(new SchemaField({type: "select", options: {values: ["a"]}}))
+// CORRECT: collection.fields.add(new SelectField({name: "status", values: ["a"]}))
+```
+
+**Pre-Generation Checklist** — verify before writing any PocketBase code:
+
+- [ ] Field properties are **flat** (no `options` wrapper)
+- [ ] Collection JSON uses `fields` key (not `schema`)
+- [ ] Migrations use typed constructors (`SelectField`, `TextField`, `RelationField`, etc.)
+- [ ] Hooks use `e.next()` and `$app.findRecordById()` (not `$app.dao()`)
+- [ ] Routes use `{paramName}` syntax (not `:paramName`)
 
 ### Design Decision Tree
 

@@ -34,6 +34,27 @@ collection.schema.addField(new SchemaField({type: "text", name: "title"}))
 collection.fields.add(new TextField({name: "title", required: true}))
 ```
 
+### Field Properties Flattened (No `options` Wrapper)
+
+In v0.22, many field types wrapped their properties in an `options` object. In v0.23+, **all properties are flat (top-level)**. The `options` key does not exist.
+
+| Field Type | v0.22 wrapped property | v0.23+ flat property |
+|------------|------------------------|----------------------|
+| select | `options: {values: [...], maxSelect: 1}` | `values: [...], maxSelect: 1` |
+| file | `options: {maxSelect: 1, maxSize: N, mimeTypes: [...]}` | `maxSelect: 1, maxSize: N, mimeTypes: [...]` |
+| relation | `options: {collectionId: "...", maxSelect: 1}` | `collectionId: "...", maxSelect: 1` |
+| text | `options: {min: 1, max: 500, pattern: "..."}` | `min: 1, max: 500, pattern: "..."` |
+
+```json
+// WRONG (v0.22) — options wrapper
+{"name": "status", "type": "select", "options": {"values": ["draft", "published"], "maxSelect": 1}}
+{"name": "avatar", "type": "file", "options": {"maxSelect": 1, "maxSize": 5242880}}
+
+// CORRECT (v0.23+) — flat properties
+{"name": "status", "type": "select", "values": ["draft", "published"], "maxSelect": 1}
+{"name": "avatar", "type": "file", "maxSelect": 1, "maxSize": 5242880}
+```
+
 ### `dao` Removed — Use `$app` Directly
 
 | v0.22 | v0.23+ |

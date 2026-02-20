@@ -2,6 +2,10 @@
 
 PocketBase v0.23+ field types for collection schemas.
 
+> **v0.23+ API Note:** Field properties are **flat** — there is no `options` wrapper.
+> WRONG: `{"type": "select", "options": {"values": ["a", "b"], "maxSelect": 1}}`
+> CORRECT: `{"type": "select", "values": ["a", "b"], "maxSelect": 1}`
+
 ## Table of Contents
 
 - [text](#text)
