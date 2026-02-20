@@ -101,7 +101,12 @@ When building a PocketBase application, follow this sequence:
    - **Default to `null` (deny all). Open only what is needed.**
    - `null` = superuser only, `""` = anyone including guests
 6. **Create** — Use scripts or migrations to create collections
-7. **Verify** — Run self-tests (see below)
+7. **Seed data** — Insert sample records for verification
+8. **E2E test** — Generate and run a project-specific E2E test script
+   - Read `.claude/skills/pocketbase/references/e2e-testing.md`
+   - Use `pb_e2e_helpers` module
+   - Test positive AND negative access for each collection's API rules
+9. **Verify** — Run self-tests (see below)
 
 ### Self-Test Verification
 
@@ -112,10 +117,17 @@ After creating or modifying collections:
 3. Rule verification: test as non-superuser
    - Use `pb_auth.py --collection users --identity ... --password ...`
    - Verify denied access returns expected behavior
-4. **E2E test** (for projects with access control):
-   - Write a project-specific test using `pb_e2e_helpers` module
-   - Test positive AND negative access for each collection/rule
+4. **E2E test** — Required when any collection has a non-`null` API rule (i.e., not superuser-only):
    - `Read .claude/skills/pocketbase/references/e2e-testing.md`
+   - Generate a test script (`test_e2e.py`) in the project root using `pb_e2e_helpers` module
+   - The test MUST cover:
+     - Unauthenticated access is denied (expect 401/403)
+     - Authenticated user can perform allowed operations
+     - User cannot access another user's resources (cross-user isolation)
+     - Spoofing prevention — if `createRule` contains `@request.body.X = @request.auth.id`, verify that setting X to a different user's ID is rejected
+     - `cascadeDelete` behavior — deleting a parent removes related child records
+     - `null` rule (superuser-only) endpoints return 403 for regular users
+   - Run the test and fix any failures before marking the task complete
 
 ### Reference Index
 
@@ -528,4 +540,5 @@ Validation error example:
 | JS SDK reference     | — | `.claude/skills/pocketbase/references/js-sdk.md`            |
 | JSVM hooks           | — | `.claude/skills/pocketbase/references/jsvm-hooks.md`        |
 | File handling        | — | `.claude/skills/pocketbase/references/file-handling.md`     |
+| Run E2E tests        | `python3 test_e2e.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
 | E2E test helpers     | Import from `.claude/skills/pocketbase/scripts/pb_e2e_helpers.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
