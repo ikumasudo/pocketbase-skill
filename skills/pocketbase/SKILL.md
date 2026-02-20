@@ -73,6 +73,22 @@ Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, max
 - [ ] Routes use `{paramName}` syntax (not `:paramName`)
 - [ ] `@collection` references in API rules use `?=` (not `=`) — `=` breaks with 2+ rows
 
+### Bootstrap (First-Time Setup)
+
+When PocketBase is not yet running:
+
+1. **Download** — Get the latest version:
+   ```bash
+   VERSION=$(curl -s https://api.github.com/repos/pocketbase/pocketbase/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'].lstrip('v'))")
+   ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
+   OS=$(uname -s | tr A-Z a-z)
+   curl -sL "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_${OS}_${ARCH}.zip" -o pb.zip && unzip -o pb.zip pocketbase && rm pb.zip
+   ```
+2. **Create superuser** — `./pocketbase superuser create admin@example.com <password>`
+3. **Write `.env`** — Confirm credentials with user, write `.env`, add to `.gitignore`
+4. **Start** — `nohup ./pocketbase serve --http=127.0.0.1:8090 > pb.log 2>&1 &`
+5. **Verify** — `python .claude/skills/pocketbase/scripts/pb_health.py`
+
 ### Design Decision Tree
 
 When building a PocketBase application, follow this sequence:
@@ -152,6 +168,22 @@ unzip pocketbase.zip
 ```bash
 ./pocketbase superuser create admin@example.com yourpassword
 ```
+
+**Starting PocketBase in background (for Claude Code sessions):**
+
+```bash
+# Start with nohup (survives shell exit)
+nohup ./pocketbase serve --http=127.0.0.1:8090 > pb.log 2>&1 &
+echo "PID: $!"
+
+# Check if running
+python .claude/skills/pocketbase/scripts/pb_health.py
+
+# Stop
+kill $(pgrep -f 'pocketbase serve')
+```
+
+> **Important:** Do NOT use Bash tool's `&` alone — the process dies when the shell session ends. Always use `nohup`.
 
 > **Agent instruction:** If the user's PocketBase is not running or not installed, always recommend downloading the latest version using the GitHub API one-liner above to determine the current version number.
 
@@ -237,6 +269,46 @@ Collection types:
 - `base` — Standard data collection
 - `auth` — Auth collection (automatically adds email, password, username, etc.)
 - `view` — Read-only SQL view (requires `viewQuery`)
+
+### Batch Creation (Recommended for multi-collection setups)
+
+When creating 3+ collections (especially with relations), use import instead of individual create calls:
+
+1. Write a single JSON file with all collections
+2. Use collection **names** (not IDs) in `collectionId` for relation fields — PocketBase resolves them during import
+3. Import all at once
+
+```bash
+python .claude/skills/pocketbase/scripts/pb_collections.py import --file collections.json
+```
+
+Example `collections.json`:
+```json
+{
+  "collections": [
+    {
+      "name": "categories",
+      "type": "base",
+      "fields": [
+        {"name": "name", "type": "text", "required": true}
+      ]
+    },
+    {
+      "name": "posts",
+      "type": "base",
+      "fields": [
+        {"name": "title", "type": "text", "required": true},
+        {"name": "category", "type": "relation", "collectionId": "categories", "maxSelect": 1}
+      ],
+      "listRule": "@request.auth.id != ''",
+      "viewRule": "@request.auth.id != ''"
+    }
+  ],
+  "deleteMissing": false
+}
+```
+
+This replaces the Phase 1 (create without relations) → Phase 2 (get IDs) → Phase 3 (update with relations) workflow.
 
 ### Update
 

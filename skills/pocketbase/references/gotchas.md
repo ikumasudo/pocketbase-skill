@@ -173,6 +173,29 @@ Then use that token for testing instead of superuser credentials.
 
 ## Data Behavior Surprises
 
+### `fields` in Update is a Full Replacement
+
+When updating a collection via `PATCH /api/collections/{id}`, the `fields` property **replaces all existing fields** — it does not merge. If you send only the new fields, existing fields will be deleted.
+
+**WRONG — deletes all existing fields:**
+```json
+// Attempting to "add" a relation field
+{"fields": [{"name": "author", "type": "relation", "collectionId": "users"}]}
+```
+
+**CORRECT — include ALL fields (existing + new):**
+```json
+{"fields": [
+  {"name": "title", "type": "text", "required": true},
+  {"name": "content", "type": "editor"},
+  {"name": "author", "type": "relation", "collectionId": "users"}
+]}
+```
+
+**Tip:** Use `pb_collections.py get <name>` first to retrieve the current fields, then append your new field to that list.
+
+**Best practice:** For multi-collection setups, use `import` instead of individual create+update — it handles everything in one call.
+
 ### Zero Defaults, Not Null
 
 PocketBase stores **zero values** for missing fields, not `null` (except JSON fields):
