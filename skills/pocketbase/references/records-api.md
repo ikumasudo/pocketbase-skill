@@ -177,6 +177,8 @@ expand=comments.author,comments.likes   // Multiple nested
 
 Expanded data appears under the `expand` property in the response.
 
+> **Relation design patterns:** Read `references/relation-patterns.md`
+
 ## Field Selection
 
 Control which fields appear in the response.

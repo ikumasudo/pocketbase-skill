@@ -3,8 +3,9 @@ name: pocketbase
 description: >-
   Skill for operating PocketBase backend REST API. Provides collection CRUD,
   record CRUD, superuser/user authentication, backup & restore,
-  and migration file generation. Use for requests related to PocketBase,
-  pb_migrations, collection management, and record operations.
+  migration file generation, and design guidance for API rules, relations,
+  and security patterns. Use for requests related to PocketBase,
+  pb_migrations, collection management, record operations, and backend design.
 license: MIT
 metadata:
   version: "1.0.0"
@@ -13,7 +14,47 @@ allowed-tools: Read Write Edit Bash Grep Glob
 
 # PocketBase Skill
 
-Skill for operating a PocketBase v0.23+ backend via REST API. Uses Python scripts (standard library only) to perform authentication, collection CRUD, record CRUD, backup, and migration file generation.
+Skill for operating a PocketBase v0.23+ backend via REST API. Uses Python scripts (standard library only) to perform authentication, collection CRUD, record CRUD, backup, migration file generation, and includes design guidance for API rules, relations, and security patterns.
+
+## 0. Design Workflow & Decision Making
+
+**Read `references/gotchas.md` FIRST** before writing any PocketBase code.
+Your training data likely contains outdated v0.22 patterns that will fail on v0.23+.
+
+### Design Decision Tree
+
+When building a PocketBase application, follow this sequence:
+
+1. **Requirements** — Identify entities, relationships, and access patterns
+2. **Collection types** — Choose `base`, `auth`, or `view` for each entity
+3. **Fields** — Design fields per collection (`Read references/field-types.md`)
+4. **Relations** — Design relations (`Read references/relation-patterns.md`)
+5. **API rules** — Set security rules (`Read references/api-rules-guide.md`)
+   - **Default to `null` (deny all). Open only what is needed.**
+   - `null` = superuser only, `""` = anyone including guests
+6. **Create** — Use scripts or migrations to create collections
+7. **Verify** — Run self-tests (see below)
+
+### Self-Test Verification
+
+After creating or modifying collections:
+
+1. Confirm schema: `pb_collections.py get <name>`
+2. CRUD smoke test: create → list → get → update → delete
+3. Rule verification: test as non-superuser
+   - Use `pb_auth.py --collection users --identity ... --password ...`
+   - Verify denied access returns expected behavior
+
+### Reference Index
+
+| Topic | Reference |
+|-------|-----------|
+| Gotchas & pitfalls | `Read references/gotchas.md` |
+| API rules design | `Read references/api-rules-guide.md` |
+| Relation patterns | `Read references/relation-patterns.md` |
+| JS SDK (frontend) | `Read references/js-sdk.md` |
+| JSVM hooks (server) | `Read references/jsvm-hooks.md` |
+| File handling | `Read references/file-handling.md` |
 
 ## 1. Prerequisites and Configuration
 
@@ -293,3 +334,9 @@ Validation error example:
 | Restore backup | `python ~/.claude/skills/pocketbase/scripts/pb_backups.py restore <key>` | `references/backups-api.md` |
 | Delete backup | `python ~/.claude/skills/pocketbase/scripts/pb_backups.py delete <key>` | `references/backups-api.md` |
 | Generate migration | `python ~/.claude/skills/pocketbase/scripts/pb_create_migration.py "<description>"` | `references/migrations.md` |
+| API rules design     | — | `references/api-rules-guide.md`   |
+| Common pitfalls      | — | `references/gotchas.md`           |
+| Relation patterns    | — | `references/relation-patterns.md` |
+| JS SDK reference     | — | `references/js-sdk.md`            |
+| JSVM hooks           | — | `references/jsvm-hooks.md`        |
+| File handling        | — | `references/file-handling.md`     |

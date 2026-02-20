@@ -200,6 +200,8 @@ File upload field.
 
 File URLs: `{PB_URL}/api/files/{collectionId}/{recordId}/{filename}`
 
+> **File operations guide:** Read `references/file-handling.md`
+
 ## relation
 
 Reference to records in another collection.

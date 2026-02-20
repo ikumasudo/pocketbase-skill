@@ -158,3 +158,5 @@ Rules control record access. They're filter expressions evaluated per-request.
 "@request.auth.role = 'admin'"              // Users with admin role
 "@request.auth.id = user.id || @request.auth.role = 'admin'"  // Owner or admin
 ```
+
+> **Comprehensive rules guide:** Read `references/api-rules-guide.md`
