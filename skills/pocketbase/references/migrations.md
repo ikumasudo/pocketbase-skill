@@ -2,6 +2,32 @@
 
 PocketBase v0.23+ JavaScript migration files.
 
+## Auto-Migration (Recommended)
+
+PocketBase automatically generates migration files when you change collections via the Admin UI or the API. **You do not need to write migration files for schema changes** — PocketBase writes them for you.
+
+### How It Works
+
+1. Make a schema change (create/update a collection via Admin UI or `pb_collections.py`)
+2. PocketBase writes a timestamped `.js` file to `pb_migrations/`
+3. Commit the generated file to git
+4. On next startup (deploy), PocketBase auto-applies all pending migrations
+
+### When to Write Manual Migrations
+
+Use `pb_create_migration.py` (empty template generator) only for operations the Admin UI cannot produce:
+
+| Use case | Why manual |
+|----------|-----------|
+| Data transformation | Reformat or copy existing field values |
+| Raw SQL | Custom indexes, bulk updates, `ALTER TABLE` |
+| Seed data | Insert initial records |
+| Complex multi-step schema | Multiple interdependent changes |
+
+`pb_create_migration.py` generates an **empty template** — it does not inspect or copy your existing schema.
+
+---
+
 ## Table of Contents
 
 - [File Format](#file-format)

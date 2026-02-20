@@ -238,10 +238,10 @@ createdAt >= @todayStart            // created today
 Reference records in other collections within a rule using `@collection`:
 
 ```
-@collection.memberships.userId = @request.auth.id
+@collection.memberships.userId ?= @request.auth.id
 ```
 
-This checks if any record in `memberships` has `userId` equal to the requesting user's ID.
+This checks if **any record** in `memberships` has `userId` equal to the requesting user's ID. Always use `?=` (not `=`) for `@collection` references — `=` requires ALL rows to match and silently breaks access when a user has 2+ rows in the joined collection. See `references/gotchas.md` → "`@collection` Cross-Collection References Always Require `?=`".
 
 ### Syntax
 
@@ -254,7 +254,7 @@ This checks if any record in `memberships` has `userId` equal to the requesting 
 When you need to join the same collection multiple times:
 
 ```
-@collection.roles:roleA.userId = @request.auth.id && @collection.roles:roleA.name = "editor"
+@collection.roles:roleA.userId ?= @request.auth.id && @collection.roles:roleA.name ?= "editor"
 ```
 
 The `:alias` suffix creates a scoped reference to avoid ambiguity.
@@ -263,7 +263,7 @@ The `:alias` suffix creates a scoped reference to avoid ambiguity.
 
 ```
 // User can access record only if they're a member of the record's team
-@collection.memberships.teamId = team && @collection.memberships.userId = @request.auth.id
+@collection.memberships.teamId ?= team && @collection.memberships.userId ?= @request.auth.id
 ```
 
 ---
@@ -334,13 +334,15 @@ Records belong to an organization. Users are members of organizations via `membe
 
 ```json
 {
-  "listRule": "@collection.memberships.orgId = orgId && @collection.memberships.userId = @request.auth.id",
-  "viewRule": "@collection.memberships.orgId = orgId && @collection.memberships.userId = @request.auth.id",
-  "createRule": "@collection.memberships.orgId = @request.body.orgId && @collection.memberships.userId = @request.auth.id",
-  "updateRule": "@collection.memberships.orgId = orgId && @collection.memberships.userId = @request.auth.id",
-  "deleteRule": "@collection.memberships.orgId = orgId && @collection.memberships.userId = @request.auth.id && @collection.memberships.role = 'admin'"
+  "listRule": "@collection.memberships.orgId ?= orgId && @collection.memberships.userId ?= @request.auth.id",
+  "viewRule": "@collection.memberships.orgId ?= orgId && @collection.memberships.userId ?= @request.auth.id",
+  "createRule": "@collection.memberships.orgId ?= @request.body.orgId && @collection.memberships.userId ?= @request.auth.id",
+  "updateRule": "@collection.memberships.orgId ?= orgId && @collection.memberships.userId ?= @request.auth.id",
+  "deleteRule": "@collection.memberships.orgId ?= orgId && @collection.memberships.userId ?= @request.auth.id && @collection.memberships.role ?= 'admin'"
 }
 ```
+
+> **`?=` is required for `@collection` references.** Using `=` instead of `?=` causes the rule to silently deny access when a user has 2 or more membership rows. See `references/gotchas.md` → "`@collection` Cross-Collection References Always Require `?=`".
 
 ### 6. Field Protection — Prevent Role Escalation
 
@@ -370,6 +372,46 @@ Only show records where publish date has passed. Useful for scheduled content.
   "viewRule": "publishDate <= @now && publishDate != '' || @request.auth.role = 'admin'"
 }
 ```
+
+### 8. Junction Table Bootstrap Problem
+
+**Problem:** A membership `createRule` that requires an existing membership record creates a chicken-and-egg situation — you cannot add the first member because the rule requires membership to pass.
+
+```
+// This createRule blocks first-member creation:
+createRule: "@collection.memberships.orgId ?= orgId && @collection.memberships.userId ?= @request.auth.id"
+```
+
+#### Solution A (Recommended): Auto-Insert via JSVM Hook
+
+Create the first membership automatically when the parent record (e.g., organization) is created. No `createRule` relaxation needed.
+
+```js
+// pb_hooks/auto_membership.pb.js
+onRecordAfterCreateSuccess((e) => {
+  const memberships = $app.findCollectionByNameOrId("memberships")
+  const m = new Record(memberships)
+  m.set("orgId", e.record.id)
+  m.set("userId", e.record.get("ownerId"))  // or @request.auth.id via hook context
+  m.set("role", "admin")
+  $app.save(m)
+  e.next()
+}, "organizations")
+```
+
+#### Solution B: Allow Owner to Self-Add as First Member
+
+Relax `createRule` to also allow the organization owner:
+
+```json
+{
+  "createRule": "(@collection.memberships.orgId ?= @request.body.orgId && @collection.memberships.userId ?= @request.auth.id) || (@request.body.orgId:isset = true && @request.body.userId = @request.auth.id)"
+}
+```
+
+#### Solution C: Superuser API Insert from Application Code
+
+Insert the initial membership from your application backend using a superuser token, bypassing API rules entirely.
 
 ---
 

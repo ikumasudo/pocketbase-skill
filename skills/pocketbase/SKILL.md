@@ -71,6 +71,7 @@ Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, max
 - [ ] Migrations use typed constructors (`SelectField`, `TextField`, `RelationField`, etc.)
 - [ ] Hooks use `e.next()` and `$app.findRecordById()` (not `$app.dao()`)
 - [ ] Routes use `{paramName}` syntax (not `:paramName`)
+- [ ] `@collection` references in API rules use `?=` (not `=`) — `=` breaks with 2+ rows
 
 ### Design Decision Tree
 
@@ -340,14 +341,33 @@ python .claude/skills/pocketbase/scripts/pb_backups.py delete pb_backup_20240101
 
 ## 6. Migrations
 
-### File Generation
+### Auto-Migration (Primary Workflow)
+
+PocketBase **automatically generates migration files** whenever you change a collection via the Admin UI or the API (e.g., `pb_collections.py create/update`). The generated files are placed in `pb_migrations/` and applied automatically on next startup.
+
+**Typical workflow:**
+1. Make schema changes via Admin UI or `pb_collections.py`
+2. PocketBase writes a timestamped `.js` file to `pb_migrations/`
+3. Commit the generated file to git
+4. On deploy, PocketBase runs pending migrations automatically at startup
+
+You do **not** need to create migration files manually for collection structure changes — they are already generated for you.
+
+### Manual Migration (for operations not auto-generated)
+
+Use `pb_create_migration.py` to generate an empty template when you need to write migration logic that the Admin UI cannot produce:
+
+- Data transformation (copy/reformat existing field values)
+- Raw SQL operations
+- Seed data insertion
+- Complex multi-step schema changes
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_create_migration.py "create_posts_collection"
-python .claude/skills/pocketbase/scripts/pb_create_migration.py "add_status_field" --dir ./pb_migrations
+python .claude/skills/pocketbase/scripts/pb_create_migration.py "backfill_user_slugs"
+python .claude/skills/pocketbase/scripts/pb_create_migration.py "seed_categories" --dir ./pb_migrations
 ```
 
-Generates a file in `{timestamp}_{description}.js` format. Write migration logic in the `// === UP ===` and `// === DOWN ===` sections of the template.
+Generates a file in `{timestamp}_{description}.js` format. Write migration logic in the `// === UP ===` and `// === DOWN ===` sections.
 
 ### Common Patterns
 

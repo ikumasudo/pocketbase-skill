@@ -242,6 +242,40 @@ tags = "news"
 tags ?= "news"
 ```
 
+### `@collection` Cross-Collection References Always Require `?=`
+
+When using `@collection.X.field` in API rules, the operator semantics change:
+
+| Operator | Meaning in `@collection` context |
+|----------|----------------------------------|
+| `=` | **ALL rows** in the joined collection must satisfy the condition (universal quantification) |
+| `?=` | **At least one row** exists satisfying the condition (existential quantification) |
+
+With `=`, PocketBase generates a correlated subquery that requires EVERY row in the collection to match. This works when there is exactly one matching row, but **silently denies access as soon as there are 2+ rows** (e.g., a user with multiple memberships, multiple subscriptions, multiple roles).
+
+**WRONG — breaks with 2+ membership rows:**
+```
+@collection.memberships.userId = @request.auth.id && @collection.memberships.orgId = orgId
+```
+
+**CORRECT — EXISTS semantics, works with any number of rows:**
+```
+@collection.memberships.userId ?= @request.auth.id && @collection.memberships.orgId ?= orgId
+```
+
+**With aliases (multiple joins to the same collection):**
+```
+// WRONG
+@collection.memberships:m.userId = @request.auth.id && @collection.memberships:m.orgId = orgId
+
+// CORRECT — alias ties the two conditions to the same row
+@collection.memberships:m.userId ?= @request.auth.id && @collection.memberships:m.orgId ?= orgId
+```
+
+> **Note:** When multiple `?=` conditions reference the same `@collection.X` (without an alias), PocketBase applies them to the same row — i.e., a single row must satisfy ALL conditions. Use aliases (`:name` suffix) to create independent joins when needed.
+
+**Rule: always use `?=` (never `=`) for `@collection` references in API rules.**
+
 ### Date Format in Filters
 
 Date values in filter expressions must be **quoted strings** with timezone:

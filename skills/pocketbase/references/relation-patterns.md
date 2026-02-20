@@ -134,6 +134,8 @@ python ~/.claude/skills/pocketbase/scripts/pb_records.py list post_tags \
   --filter 'post = "POST_ID"' --expand "tag" --sort "sortOrder"
 ```
 
+> **Bootstrap problem:** If the junction collection's `createRule` requires an existing junction row (e.g., membership check), the very first row cannot be inserted — a chicken-and-egg situation. Use a JSVM hook (`onRecordAfterCreateSuccess`) on the parent collection to auto-insert the first junction row, or relax the `createRule` to allow the owner to self-add. See `references/api-rules-guide.md` → "Junction Table Bootstrap Problem".
+
 ---
 
 ## Back-Relations
@@ -254,15 +256,17 @@ Use relation fields for access control checks directly in rules.
 
 ```
 // User can access organization data if they have a membership record
-@collection.memberships.userId = @request.auth.id && @collection.memberships.orgId = id
+@collection.memberships.userId ?= @request.auth.id && @collection.memberships.orgId ?= id
 ```
 
 ### Cross-Collection Reference
 
 ```
 // User can view record if they have an active subscription
-@collection.subscriptions.userId = @request.auth.id && @collection.subscriptions.status = "active"
+@collection.subscriptions.userId ?= @request.auth.id && @collection.subscriptions.status ?= "active"
 ```
+
+> **Always use `?=` (not `=`) for `@collection` references.** Using `=` works with exactly one matching row but silently denies access when 2+ rows exist (e.g., a user with multiple memberships or subscriptions). See `references/gotchas.md` → "`@collection` Cross-Collection References Always Require `?=`".
 
 ---
 
