@@ -25,7 +25,7 @@ npx skills add ikumasudo/pocketbase-skill@pocketbase
 ## Prerequisites
 
 - Python 3 (standard library only, no external packages)
-- A running PocketBase instance (v0.23+)
+- A running PocketBase instance (v0.23+) — [Download from GitHub Releases](https://github.com/pocketbase/pocketbase/releases/latest)
 - Environment variables or `.env` file:
 
 | Variable | Required | Default | Description |

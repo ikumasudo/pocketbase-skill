@@ -58,6 +58,46 @@ After creating or modifying collections:
 
 ## 1. Prerequisites and Configuration
 
+### Getting and Starting PocketBase
+
+If PocketBase is not yet installed, guide the user to download the latest version:
+
+**Check the latest version:**
+```bash
+curl -s https://api.github.com/repos/pocketbase/pocketbase/releases/latest | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])"
+```
+
+**Download URL pattern:**
+```
+https://github.com/pocketbase/pocketbase/releases/download/v{VERSION}/pocketbase_{VERSION}_{OS}_{ARCH}.zip
+```
+
+**Platform asset names:**
+
+| Platform | Asset name |
+|----------|------------|
+| Linux amd64 | `pocketbase_{VERSION}_linux_amd64.zip` |
+| Linux arm64 | `pocketbase_{VERSION}_linux_arm64.zip` |
+| macOS amd64 | `pocketbase_{VERSION}_darwin_amd64.zip` |
+| macOS arm64 (Apple Silicon) | `pocketbase_{VERSION}_darwin_arm64.zip` |
+| Windows amd64 | `pocketbase_{VERSION}_windows_amd64.zip` |
+
+**Download, extract, and start:**
+```bash
+# Example for Linux amd64 (replace VERSION with the actual version number, e.g. 0.28.0)
+VERSION=0.28.0
+curl -L -o pocketbase.zip "https://github.com/pocketbase/pocketbase/releases/download/v${VERSION}/pocketbase_${VERSION}_linux_amd64.zip"
+unzip pocketbase.zip
+./pocketbase serve
+```
+
+**Create a superuser:**
+```bash
+./pocketbase superuser create admin@example.com yourpassword
+```
+
+> **Agent instruction:** If the user's PocketBase is not running or not installed, always recommend downloading the latest version using the GitHub API one-liner above to determine the current version number.
+
 ### Environment Variables
 
 | Variable | Required | Default | Description |
