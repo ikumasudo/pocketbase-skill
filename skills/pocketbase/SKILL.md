@@ -96,6 +96,10 @@ After creating or modifying collections:
 3. Rule verification: test as non-superuser
    - Use `pb_auth.py --collection users --identity ... --password ...`
    - Verify denied access returns expected behavior
+4. **E2E test** (for projects with access control):
+   - Write a project-specific test using `pb_e2e_helpers` module
+   - Test positive AND negative access for each collection/rule
+   - `Read .claude/skills/pocketbase/references/e2e-testing.md`
 
 ### Reference Index
 
@@ -107,6 +111,7 @@ After creating or modifying collections:
 | JS SDK (frontend) | `Read .claude/skills/pocketbase/references/js-sdk.md` |
 | JSVM hooks (server) | `Read .claude/skills/pocketbase/references/jsvm-hooks.md` |
 | File handling | `Read .claude/skills/pocketbase/references/file-handling.md` |
+| E2E testing patterns | `Read .claude/skills/pocketbase/references/e2e-testing.md` |
 
 ## 1. Prerequisites and Configuration
 
@@ -451,3 +456,4 @@ Validation error example:
 | JS SDK reference     | — | `.claude/skills/pocketbase/references/js-sdk.md`            |
 | JSVM hooks           | — | `.claude/skills/pocketbase/references/jsvm-hooks.md`        |
 | File handling        | — | `.claude/skills/pocketbase/references/file-handling.md`     |
+| E2E test helpers     | Import from `.claude/skills/pocketbase/scripts/pb_e2e_helpers.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
