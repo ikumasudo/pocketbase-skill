@@ -104,6 +104,7 @@ python scripts/pb_health.py
 | REST API | Identical — all Python scripts (`pb_collections.py`, `pb_records.py`, etc.) work as-is |
 | Admin Dashboard | Available at `/_/` as usual |
 | E2E tests | No changes needed — tests use REST API |
+| Go tests (`go test`) | Use `tests.ApiScenario` + `tests.NewTestApp` — see `Read references/go-testing.md` |
 
 **Recommendation:** Pick one language for hooks and migrations (Go or JSVM), don't mix.
 
@@ -186,3 +187,33 @@ record.GetStringSlice("tags")    // multi-select / multi-relation
 record.GetDateTime("created")
 record.Get("data")               // returns any (for JSON fields)
 ```
+
+---
+
+## 6. Testing
+
+PocketBase provides `github.com/pocketbase/pocketbase/tests` for in-process integration testing. No running server needed — `go test` handles everything.
+
+**Key components:**
+- `tests.NewTestApp(dataDir)` — creates a test app from a snapshot of `test_pb_data/`
+- `tests.ApiScenario` — table-driven HTTP test struct with built-in assertions
+- `tests.MockMultipartData()` — generates multipart bodies for file upload tests
+
+**Quick example:**
+
+```go
+scenarios := []tests.ApiScenario{
+    {
+        Name:           "guest is denied",
+        Method:         http.MethodGet,
+        URL:            "/api/hello/world",
+        ExpectedStatus: 401,
+        TestAppFactory: setupTestApp,
+    },
+}
+for _, s := range scenarios {
+    s.Test(t)
+}
+```
+
+**Full reference:** `Read references/go-testing.md` — step-by-step setup, all ApiScenario fields, and common test patterns.

@@ -277,3 +277,72 @@ err := app.NewMailClient().Send(message)
 | Cron | `cronAdd("id", "expr", handler)` | `app.Cron().MustAdd("id", "expr", handler)` |
 | Send email | `$app.newMailClient().send(msg)` | `app.NewMailClient().Send(msg)` |
 | Raw SQL | `$app.db().newQuery(sql).execute()` | `app.DB().NewQuery(sql).Execute()` |
+
+---
+
+## 8. Testing Hooks & Routes
+
+Test custom hooks and routes in-process using `github.com/pocketbase/pocketbase/tests`. No running PocketBase instance needed.
+
+### Setup Pattern
+
+1. **Extract** hook/route registration into a standalone function:
+
+```go
+// hooks.go
+func bindAppHooks(app core.App) {
+    app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+        se.Router.GET("/api/hello/{name}", func(e *core.RequestEvent) error {
+            name := e.Request.PathValue("name")
+            return e.JSON(http.StatusOK, map[string]string{"message": "Hello " + name})
+        }).Bind(apis.RequireAuth())
+        return se.Next()
+    })
+}
+```
+
+2. **Create** a `TestAppFactory` that applies your hooks to a test app:
+
+```go
+setupTestApp := func(t testing.TB) *tests.TestApp {
+    testApp, err := tests.NewTestApp("./test_pb_data")
+    if err != nil {
+        t.Fatal(err)
+    }
+    bindAppHooks(testApp)
+    return testApp
+}
+```
+
+3. **Write** `ApiScenario` tests:
+
+```go
+scenarios := []tests.ApiScenario{
+    {
+        Name:           "guest denied by RequireAuth",
+        Method:         http.MethodGet,
+        URL:            "/api/hello/world",
+        ExpectedStatus: 401,
+        TestAppFactory: setupTestApp,
+    },
+    {
+        Name:           "hook sets default status on create",
+        Method:         http.MethodPost,
+        URL:            "/api/collections/posts/records",
+        Body:           strings.NewReader(`{"title":"Test"}`),
+        Headers:        map[string]string{"Authorization": userToken},
+        ExpectedStatus: 200,
+        ExpectedContent: []string{`"status":"draft"`},
+        ExpectedEvents: map[string]int{
+            "OnRecordCreate":             1,
+            "OnRecordAfterCreateSuccess": 1,
+        },
+        TestAppFactory: setupTestApp,
+    },
+}
+for _, s := range scenarios {
+    s.Test(t)
+}
+```
+
+**Full reference:** `Read references/go-testing.md` — complete setup guide, token generation, ApiScenario field reference, file upload testing, and gotchas.

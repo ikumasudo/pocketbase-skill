@@ -39,6 +39,7 @@ Go package mode additional references:
 - Setup & structure → `Read references/go-framework.md`
 - Migrations → `Read references/go-migrations.md`
 - Hooks & custom routes → `Read references/go-hooks-routes.md`
+- Testing custom Go code → `Read references/go-testing.md`
 
 Go package mode still uses the same REST API. Python scripts (`pb_collections.py`, etc.) and E2E tests work as-is.
 
@@ -94,6 +95,7 @@ Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, max
 - [ ] Rules set with `types.Pointer("rule")` (not direct string assignment — `*string` type)
 - [ ] `_ "yourmodule/migrations"` blank import exists in `main.go`
 - [ ] Hooks call `return e.Next()` (omitting causes request hang)
+- [ ] `test_pb_data/` exists and is committed when Go tests are needed
 
 ### Bootstrap (First-Time Setup)
 
@@ -127,10 +129,15 @@ When building a PocketBase application, follow this sequence:
    - **Go package**: Go migrations (`migrations/*.go`) — `Read references/go-migrations.md`
    - Hooks/routes: Standalone uses JSVM (`pb_hooks/*.pb.js`), Go uses Go code — `Read references/go-hooks-routes.md`
 7. **Seed data** — Insert sample records for verification
-8. **E2E test** — Generate and run a project-specific E2E test script
-   - Read `references/e2e-testing.md`
-   - Use `pb_e2e_helpers` module
-   - Test positive AND negative access for each collection's API rules
+8. **Test** — Two complementary test strategies:
+   - **Python E2E** (API rule verification) — when any collection has non-`null` rules:
+     - Read `references/e2e-testing.md`
+     - Use `pb_e2e_helpers` module
+     - Test positive AND negative access for each collection's API rules
+   - **Go tests** (custom code verification) — when custom routes or hooks exist in Go:
+     - Read `references/go-testing.md`
+     - Extract hooks into `bindAppHooks()`, write `ApiScenario` tests
+     - Test auth middleware, hook side effects, and request/response behavior
 9. **Verify** — Run self-tests (see below)
 
 ### Self-Test Verification
@@ -153,6 +160,15 @@ After creating or modifying collections:
      - `cascadeDelete` behavior — deleting a parent removes related child records
      - `null` rule (superuser-only) endpoints return 403 for regular users
    - Run the test and fix any failures before marking the task complete
+5. **Go tests** — Required when custom routes or hooks are written in Go (Go package mode):
+   - `Read references/go-testing.md`
+   - Extract hook/route registration into a `bindAppHooks(app core.App)` function
+   - Prepare `test_pb_data/` with test collections, users, and sample records
+   - Write `ApiScenario` table-driven tests covering:
+     - Auth middleware (guest denied, wrong role denied, correct role allowed)
+     - Hook defaults and validations (ExpectedContent, ExpectedEvents)
+     - Hook side effects (AfterTestFunc to verify DB writes)
+   - Run `go test ./...` and fix any failures before marking the task complete
 
 ### Reference Index
 
@@ -168,6 +184,7 @@ After creating or modifying collections:
 | Go framework setup   | `Read references/go-framework.md`    |
 | Go migrations        | `Read references/go-migrations.md`   |
 | Go hooks & routes    | `Read references/go-hooks-routes.md` |
+| Go testing           | `Read references/go-testing.md`      |
 | Production deployment (Docker, binary, proxy) | `Read references/deployment.md` in the `pb-react-spa` skill |
 | React SPA frontend | `pb-react-spa` skill (separate skill) |
 
@@ -604,3 +621,4 @@ Validation error example:
 | Go: dev run          | `go run . serve`                                                 | `references/go-framework.md`   |
 | Go: create superuser | `go run . superuser create email pw`                             | `references/go-framework.md`   |
 | Go: migration template | `assets/migration-template.go`       | `references/go-migrations.md`  |
+| Go: run tests          | `go test ./...`                                                  | `references/go-testing.md`     |
