@@ -7,7 +7,7 @@ End-to-end tests verify that API rules work correctly by making HTTP requests as
 ```python
 #!/usr/bin/env python3
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), ".claude", "skills", "pocketbase", "scripts"))
+sys.path.insert(0, "<absolute path to this skill's scripts/ directory>")
 
 from pb_e2e_helpers import TestRunner, req, user_login, create_test_user, pre_cleanup, superuser_delete
 
@@ -27,15 +27,13 @@ sys.exit(t.summary())
 
 ## Import Path Setup
 
-Tests must add the skill scripts directory to `sys.path` before importing:
+Tests must add the skill's `scripts/` directory to `sys.path` before importing. The absolute path depends on where the skill is installed (e.g., `~/.claude/skills/pocketbase/scripts` or `<project>/.claude/skills/pocketbase/scripts`). Resolve the correct path at code-generation time:
 
 ```python
 import sys, os
-sys.path.insert(0, os.path.join(os.getcwd(), ".claude", "skills", "pocketbase", "scripts"))
+sys.path.insert(0, "<absolute path to this skill's scripts/ directory>")
 from pb_e2e_helpers import TestRunner, req, user_login, create_test_user, pre_cleanup, superuser_delete
 ```
-
-This works from the project root regardless of where the test file lives.
 
 ## Test Structure Pattern
 
@@ -277,7 +275,7 @@ Collections:
 """
 import sys, os
 
-sys.path.insert(0, os.path.join(os.getcwd(), ".claude", "skills", "pocketbase", "scripts"))
+sys.path.insert(0, "<absolute path to this skill's scripts/ directory>")
 
 from pb_e2e_helpers import (
     TestRunner, req, user_login, create_test_user,

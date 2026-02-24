@@ -163,7 +163,7 @@ Superusers are exempt from all API rules. **Never test rules while authenticated
 Test rule behavior with:
 ```bash
 # Get a regular user token
-python ~/.claude/skills/pocketbase/scripts/pb_auth.py \
+python scripts/pb_auth.py \
   --collection users --identity user@example.com --password secret
 ```
 
@@ -324,7 +324,7 @@ When expanding back-relations (reverse side of a relation):
 
 ```bash
 # Instead of expanding back-relations on a user, query posts directly
-python ~/.claude/skills/pocketbase/scripts/pb_records.py list posts \
+python scripts/pb_records.py list posts \
   --filter 'author = "USER_ID"' --sort "-created"
 ```
 

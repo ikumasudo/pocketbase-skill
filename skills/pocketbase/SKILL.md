@@ -20,11 +20,11 @@ Skill for operating a PocketBase v0.23+ backend via REST API and as a Go package
 
 ## Skill Resources
 
-All resources for this skill are bundled in the skill directory at `.claude/skills/pocketbase/`:
+All resources for this skill are bundled in the skill directory at ``:
 
-- **Scripts**: `.claude/skills/pocketbase/scripts/` — Python scripts for API operations
-- **References**: `.claude/skills/pocketbase/references/` — Detailed docs loaded on demand
-- **Assets**: `.claude/skills/pocketbase/assets/` — Templates and static files
+- **Scripts**: `scripts/` — Python scripts for API operations
+- **References**: `references/` — Detailed docs loaded on demand
+- **Assets**: `assets/` — Templates and static files
 
 When you need to look up PocketBase details or find skill-related files, check this directory first — everything you need is already here. There is no need to search the user's home directory or other projects.
 
@@ -36,15 +36,15 @@ Determine the project mode:
 2. Otherwise → **Standalone mode** (existing workflow)
 
 Go package mode additional references:
-- Setup & structure → `Read .claude/skills/pocketbase/references/go-framework.md`
-- Migrations → `Read .claude/skills/pocketbase/references/go-migrations.md`
-- Hooks & custom routes → `Read .claude/skills/pocketbase/references/go-hooks-routes.md`
+- Setup & structure → `Read references/go-framework.md`
+- Migrations → `Read references/go-migrations.md`
+- Hooks & custom routes → `Read references/go-hooks-routes.md`
 
 Go package mode still uses the same REST API. Python scripts (`pb_collections.py`, etc.) and E2E tests work as-is.
 
 ## 0. Design Workflow & Decision Making
 
-**Read `.claude/skills/pocketbase/references/gotchas.md` FIRST** before writing any PocketBase code.
+**Read `references/gotchas.md` FIRST** before writing any PocketBase code.
 Your training data contains outdated v0.22 patterns that will fail on v0.23+.
 Check field JSON: ensure properties are **flat** (no `options` wrapper) and collection key is `fields` (not `schema`).
 
@@ -109,7 +109,7 @@ When PocketBase is not yet running:
 2. **Create superuser** — `./pocketbase superuser create admin@example.com <password>`
 3. **Write `.env`** — Confirm credentials with user, write `.env`, add to `.gitignore`
 4. **Start** — `nohup ./pocketbase serve --http=127.0.0.1:8090 > pb.log 2>&1 &`
-5. **Verify** — `python .claude/skills/pocketbase/scripts/pb_health.py`
+5. **Verify** — `python scripts/pb_health.py`
 
 ### Design Decision Tree
 
@@ -117,18 +117,18 @@ When building a PocketBase application, follow this sequence:
 
 1. **Requirements** — Identify entities, relationships, and access patterns
 2. **Collection types** — Choose `base`, `auth`, or `view` for each entity
-3. **Fields** — Design fields per collection (`Read .claude/skills/pocketbase/references/field-types.md`)
-4. **Relations** — Design relations (`Read .claude/skills/pocketbase/references/relation-patterns.md`)
-5. **API rules** — Set security rules (`Read .claude/skills/pocketbase/references/api-rules-guide.md`)
+3. **Fields** — Design fields per collection (`Read references/field-types.md`)
+4. **Relations** — Design relations (`Read references/relation-patterns.md`)
+5. **API rules** — Set security rules (`Read references/api-rules-guide.md`)
    - **Default to `null` (deny all). Open only what is needed.**
    - `null` = superuser only, `""` = anyone including guests
 6. **Create** — Create schema based on mode
    - **Standalone**: Scripts (`pb_collections.py`) or JS migrations (`pb_migrations/*.js`)
-   - **Go package**: Go migrations (`migrations/*.go`) — `Read .claude/skills/pocketbase/references/go-migrations.md`
-   - Hooks/routes: Standalone uses JSVM (`pb_hooks/*.pb.js`), Go uses Go code — `Read .claude/skills/pocketbase/references/go-hooks-routes.md`
+   - **Go package**: Go migrations (`migrations/*.go`) — `Read references/go-migrations.md`
+   - Hooks/routes: Standalone uses JSVM (`pb_hooks/*.pb.js`), Go uses Go code — `Read references/go-hooks-routes.md`
 7. **Seed data** — Insert sample records for verification
 8. **E2E test** — Generate and run a project-specific E2E test script
-   - Read `.claude/skills/pocketbase/references/e2e-testing.md`
+   - Read `references/e2e-testing.md`
    - Use `pb_e2e_helpers` module
    - Test positive AND negative access for each collection's API rules
 9. **Verify** — Run self-tests (see below)
@@ -143,7 +143,7 @@ After creating or modifying collections:
    - Use `pb_auth.py --collection users --identity ... --password ...`
    - Verify denied access returns expected behavior
 4. **E2E test** — Required when any collection has a non-`null` API rule (i.e., not superuser-only):
-   - `Read .claude/skills/pocketbase/references/e2e-testing.md`
+   - `Read references/e2e-testing.md`
    - Generate a test script (`test_e2e.py`) in the project root using `pb_e2e_helpers` module
    - The test MUST cover:
      - Unauthenticated access is denied (expect 401/403)
@@ -158,16 +158,16 @@ After creating or modifying collections:
 
 | Topic | Reference |
 |-------|-----------|
-| Gotchas & pitfalls | `Read .claude/skills/pocketbase/references/gotchas.md` |
-| API rules design | `Read .claude/skills/pocketbase/references/api-rules-guide.md` |
-| Relation patterns | `Read .claude/skills/pocketbase/references/relation-patterns.md` |
-| JS SDK (frontend) | `Read .claude/skills/pocketbase/references/js-sdk.md` |
-| JSVM hooks (server) | `Read .claude/skills/pocketbase/references/jsvm-hooks.md` |
-| File handling | `Read .claude/skills/pocketbase/references/file-handling.md` |
-| E2E testing patterns | `Read .claude/skills/pocketbase/references/e2e-testing.md` |
-| Go framework setup   | `Read .claude/skills/pocketbase/references/go-framework.md`    |
-| Go migrations        | `Read .claude/skills/pocketbase/references/go-migrations.md`   |
-| Go hooks & routes    | `Read .claude/skills/pocketbase/references/go-hooks-routes.md` |
+| Gotchas & pitfalls | `Read references/gotchas.md` |
+| API rules design | `Read references/api-rules-guide.md` |
+| Relation patterns | `Read references/relation-patterns.md` |
+| JS SDK (frontend) | `Read references/js-sdk.md` |
+| JSVM hooks (server) | `Read references/jsvm-hooks.md` |
+| File handling | `Read references/file-handling.md` |
+| E2E testing patterns | `Read references/e2e-testing.md` |
+| Go framework setup   | `Read references/go-framework.md`    |
+| Go migrations        | `Read references/go-migrations.md`   |
+| Go hooks & routes    | `Read references/go-hooks-routes.md` |
 
 ## 1. Prerequisites and Configuration
 
@@ -217,7 +217,7 @@ nohup ./pocketbase serve --http=127.0.0.1:8090 > pb.log 2>&1 &
 echo "PID: $!"
 
 # Check if running
-python .claude/skills/pocketbase/scripts/pb_health.py
+python scripts/pb_health.py
 
 # Stop
 kill $(pgrep -f 'pocketbase serve')
@@ -250,7 +250,7 @@ PB_SUPERUSER_PASSWORD=your-password
 ### Connection Check
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_health.py
+python scripts/pb_health.py
 ```
 
 Runs a health check and (if credentials are available) a superuser authentication test.
@@ -260,7 +260,7 @@ Runs a health check and (if credentials are available) a superuser authenticatio
 ### Superuser Authentication
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_auth.py
+python scripts/pb_auth.py
 ```
 
 Authenticates using `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` via `POST /api/collections/_superusers/auth-with-password`. Returns a token.
@@ -268,7 +268,7 @@ Authenticates using `PB_SUPERUSER_EMAIL` and `PB_SUPERUSER_PASSWORD` via `POST /
 ### User Authentication
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_auth.py --collection users --identity user@example.com --password secret
+python scripts/pb_auth.py --collection users --identity user@example.com --password secret
 ```
 
 Authenticates against any auth collection.
@@ -277,32 +277,32 @@ Authenticates against any auth collection.
 
 Each script internally auto-acquires and caches the superuser token. On a 401 error, it retries authentication once.
 
-**Details:** `Read .claude/skills/pocketbase/references/auth-api.md` — OAuth2, impersonate, password reset, etc.
+**Details:** `Read references/auth-api.md` — OAuth2, impersonate, password reset, etc.
 
 ## 3. Collection Management
 
 ### List
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py list
-python .claude/skills/pocketbase/scripts/pb_collections.py list --filter "name~'user'" --sort "-created"
+python scripts/pb_collections.py list
+python scripts/pb_collections.py list --filter "name~'user'" --sort "-created"
 ```
 
 ### Get
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py get posts
-python .claude/skills/pocketbase/scripts/pb_collections.py get pbc_1234567890
+python scripts/pb_collections.py get posts
+python scripts/pb_collections.py get pbc_1234567890
 ```
 
 ### Create
 
 ```bash
 # Inline JSON
-python .claude/skills/pocketbase/scripts/pb_collections.py create '{"name":"posts","type":"base","fields":[{"name":"title","type":"text","required":true},{"name":"content","type":"editor"}]}'
+python scripts/pb_collections.py create '{"name":"posts","type":"base","fields":[{"name":"title","type":"text","required":true},{"name":"content","type":"editor"}]}'
 
 # From file
-python .claude/skills/pocketbase/scripts/pb_collections.py create --file schema.json
+python scripts/pb_collections.py create --file schema.json
 ```
 
 Collection types:
@@ -319,7 +319,7 @@ When creating 3+ collections (especially with relations), use import instead of 
 3. Import all at once
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py import --file collections.json
+python scripts/pb_collections.py import --file collections.json
 ```
 
 Example `collections.json`:
@@ -353,58 +353,58 @@ This replaces the Phase 1 (create without relations) → Phase 2 (get IDs) → P
 ### Update
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py update posts '{"listRule":"@request.auth.id != '\'''\''","fields":[{"name":"title","type":"text","required":true},{"name":"content","type":"editor"},{"name":"status","type":"select","values":["draft","published"]}]}'
+python scripts/pb_collections.py update posts '{"listRule":"@request.auth.id != '\'''\''","fields":[{"name":"title","type":"text","required":true},{"name":"content","type":"editor"},{"name":"status","type":"select","values":["draft","published"]}]}'
 ```
 
 ### Delete
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py delete posts
+python scripts/pb_collections.py delete posts
 ```
 
 ### Import
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_collections.py import --file collections.json
+python scripts/pb_collections.py import --file collections.json
 ```
 
 `collections.json` is a collections array, or `{"collections": [...], "deleteMissing": false}` format.
 
-**Details:** `Read .claude/skills/pocketbase/references/collections-api.md` — API rule syntax, all parameters.
+**Details:** `Read references/collections-api.md` — API rule syntax, all parameters.
 
 ## 4. Record Management
 
 ### List
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_records.py list posts
-python .claude/skills/pocketbase/scripts/pb_records.py list posts --filter 'status="published"' --sort "-created" --expand "author" --page 1 --perPage 50
+python scripts/pb_records.py list posts
+python scripts/pb_records.py list posts --filter 'status="published"' --sort "-created" --expand "author" --page 1 --perPage 50
 ```
 
 ### Get
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_records.py get posts abc123def456789
-python .claude/skills/pocketbase/scripts/pb_records.py get posts abc123def456789 --expand "author,comments"
+python scripts/pb_records.py get posts abc123def456789
+python scripts/pb_records.py get posts abc123def456789 --expand "author,comments"
 ```
 
 ### Create
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_records.py create posts '{"title":"Hello World","content":"<p>My first post</p>","status":"draft"}'
-python .claude/skills/pocketbase/scripts/pb_records.py create posts --file record.json
+python scripts/pb_records.py create posts '{"title":"Hello World","content":"<p>My first post</p>","status":"draft"}'
+python scripts/pb_records.py create posts --file record.json
 ```
 
 ### Update
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_records.py update posts abc123def456789 '{"status":"published"}'
+python scripts/pb_records.py update posts abc123def456789 '{"status":"published"}'
 ```
 
 ### Delete
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_records.py delete posts abc123def456789
+python scripts/pb_records.py delete posts abc123def456789
 ```
 
 ### Filter Syntax Quick Reference
@@ -430,23 +430,23 @@ Grouping: `(expr1 && expr2) || expr3`
 `--expand "author.profile"` — Nested relation (up to 6 levels).
 `--expand "author,category"` — Multiple relations.
 
-**Details:** `Read .claude/skills/pocketbase/references/records-api.md` — Batch operations, field selection, all operators.
+**Details:** `Read references/records-api.md` — Batch operations, field selection, all operators.
 
 ## 5. Backup & Restore
 
 ```bash
 # List
-python .claude/skills/pocketbase/scripts/pb_backups.py list
+python scripts/pb_backups.py list
 
 # Create (omit name for auto-generated timestamp name)
-python .claude/skills/pocketbase/scripts/pb_backups.py create
-python .claude/skills/pocketbase/scripts/pb_backups.py create my_backup.zip
+python scripts/pb_backups.py create
+python scripts/pb_backups.py create my_backup.zip
 
 # Restore (caution: replaces all data; server restart involved)
-python .claude/skills/pocketbase/scripts/pb_backups.py restore pb_backup_20240101120000.zip
+python scripts/pb_backups.py restore pb_backup_20240101120000.zip
 
 # Delete
-python .claude/skills/pocketbase/scripts/pb_backups.py delete pb_backup_20240101120000.zip
+python scripts/pb_backups.py delete pb_backup_20240101120000.zip
 ```
 
 **Notes:**
@@ -454,7 +454,7 @@ python .claude/skills/pocketbase/scripts/pb_backups.py delete pb_backup_20240101
 - Server becomes temporarily unavailable during restore
 - Always create a backup of current data before restoring
 
-**Details:** `Read .claude/skills/pocketbase/references/backups-api.md`
+**Details:** `Read references/backups-api.md`
 
 ## 6. Migrations
 
@@ -480,8 +480,8 @@ Use `pb_create_migration.py` to generate an empty template when you need to writ
 - Complex multi-step schema changes
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_create_migration.py "backfill_user_slugs"
-python .claude/skills/pocketbase/scripts/pb_create_migration.py "seed_categories" --dir ./pb_migrations
+python scripts/pb_create_migration.py "backfill_user_slugs"
+python scripts/pb_create_migration.py "seed_categories" --dir ./pb_migrations
 ```
 
 Generates a file in `{timestamp}_{description}.js` format. Write migration logic in the `// === UP ===` and `// === DOWN ===` sections.
@@ -497,8 +497,8 @@ Generates a file in `{timestamp}_{description}.js` format. Write migration logic
 | Execute SQL | `app.db().newQuery("...").execute()` | Reverse SQL |
 | Seed data | `new Record(collection)` + `app.save()` | Delete records |
 
-**Details:** `Read .claude/skills/pocketbase/references/migrations.md` — Code examples for all patterns.
-**Field types:** `Read .claude/skills/pocketbase/references/field-types.md` — All field types and configuration options.
+**Details:** `Read references/migrations.md` — Code examples for all patterns.
+**Field types:** `Read references/field-types.md` — All field types and configuration options.
 
 ## 7. Error Handling
 
@@ -543,34 +543,34 @@ Validation error example:
 
 | Task | Script | Detail Reference |
 |------|--------|-----------------|
-| Connection check | `python .claude/skills/pocketbase/scripts/pb_health.py` | — |
-| Superuser auth | `python .claude/skills/pocketbase/scripts/pb_auth.py` | `.claude/skills/pocketbase/references/auth-api.md` |
-| User auth | `python .claude/skills/pocketbase/scripts/pb_auth.py --collection <name> --identity <email> --password <pw>` | `.claude/skills/pocketbase/references/auth-api.md` |
-| List collections | `python .claude/skills/pocketbase/scripts/pb_collections.py list` | `.claude/skills/pocketbase/references/collections-api.md` |
-| Get collection | `python .claude/skills/pocketbase/scripts/pb_collections.py get <name>` | `.claude/skills/pocketbase/references/collections-api.md` |
-| Create collection | `python .claude/skills/pocketbase/scripts/pb_collections.py create '<json>'` | `.claude/skills/pocketbase/references/collections-api.md`, `.claude/skills/pocketbase/references/field-types.md` |
-| Update collection | `python .claude/skills/pocketbase/scripts/pb_collections.py update <name> '<json>'` | `.claude/skills/pocketbase/references/collections-api.md` |
-| Delete collection | `python .claude/skills/pocketbase/scripts/pb_collections.py delete <name>` | `.claude/skills/pocketbase/references/collections-api.md` |
-| Import collections | `python .claude/skills/pocketbase/scripts/pb_collections.py import --file <file>` | `.claude/skills/pocketbase/references/collections-api.md` |
-| List records | `python .claude/skills/pocketbase/scripts/pb_records.py list <collection>` | `.claude/skills/pocketbase/references/records-api.md` |
-| Get record | `python .claude/skills/pocketbase/scripts/pb_records.py get <collection> <id>` | `.claude/skills/pocketbase/references/records-api.md` |
-| Create record | `python .claude/skills/pocketbase/scripts/pb_records.py create <collection> '<json>'` | `.claude/skills/pocketbase/references/records-api.md` |
-| Update record | `python .claude/skills/pocketbase/scripts/pb_records.py update <collection> <id> '<json>'` | `.claude/skills/pocketbase/references/records-api.md` |
-| Delete record | `python .claude/skills/pocketbase/scripts/pb_records.py delete <collection> <id>` | `.claude/skills/pocketbase/references/records-api.md` |
-| List backups | `python .claude/skills/pocketbase/scripts/pb_backups.py list` | `.claude/skills/pocketbase/references/backups-api.md` |
-| Create backup | `python .claude/skills/pocketbase/scripts/pb_backups.py create [name]` | `.claude/skills/pocketbase/references/backups-api.md` |
-| Restore backup | `python .claude/skills/pocketbase/scripts/pb_backups.py restore <key>` | `.claude/skills/pocketbase/references/backups-api.md` |
-| Delete backup | `python .claude/skills/pocketbase/scripts/pb_backups.py delete <key>` | `.claude/skills/pocketbase/references/backups-api.md` |
-| Generate migration | `python .claude/skills/pocketbase/scripts/pb_create_migration.py "<description>"` | `.claude/skills/pocketbase/references/migrations.md` |
-| API rules design     | — | `.claude/skills/pocketbase/references/api-rules-guide.md`   |
-| Common pitfalls      | — | `.claude/skills/pocketbase/references/gotchas.md`           |
-| Relation patterns    | — | `.claude/skills/pocketbase/references/relation-patterns.md` |
-| JS SDK reference     | — | `.claude/skills/pocketbase/references/js-sdk.md`            |
-| JSVM hooks           | — | `.claude/skills/pocketbase/references/jsvm-hooks.md`        |
-| File handling        | — | `.claude/skills/pocketbase/references/file-handling.md`     |
-| Run E2E tests        | `python3 test_e2e.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
-| E2E test helpers     | Import from `.claude/skills/pocketbase/scripts/pb_e2e_helpers.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
-| Go: build & run      | `go build -o myapp . && ./myapp serve`                          | `.claude/skills/pocketbase/references/go-framework.md`   |
-| Go: dev run          | `go run . serve`                                                 | `.claude/skills/pocketbase/references/go-framework.md`   |
-| Go: create superuser | `go run . superuser create email pw`                             | `.claude/skills/pocketbase/references/go-framework.md`   |
-| Go: migration template | `.claude/skills/pocketbase/assets/migration-template.go`       | `.claude/skills/pocketbase/references/go-migrations.md`  |
+| Connection check | `python scripts/pb_health.py` | — |
+| Superuser auth | `python scripts/pb_auth.py` | `references/auth-api.md` |
+| User auth | `python scripts/pb_auth.py --collection <name> --identity <email> --password <pw>` | `references/auth-api.md` |
+| List collections | `python scripts/pb_collections.py list` | `references/collections-api.md` |
+| Get collection | `python scripts/pb_collections.py get <name>` | `references/collections-api.md` |
+| Create collection | `python scripts/pb_collections.py create '<json>'` | `references/collections-api.md`, `references/field-types.md` |
+| Update collection | `python scripts/pb_collections.py update <name> '<json>'` | `references/collections-api.md` |
+| Delete collection | `python scripts/pb_collections.py delete <name>` | `references/collections-api.md` |
+| Import collections | `python scripts/pb_collections.py import --file <file>` | `references/collections-api.md` |
+| List records | `python scripts/pb_records.py list <collection>` | `references/records-api.md` |
+| Get record | `python scripts/pb_records.py get <collection> <id>` | `references/records-api.md` |
+| Create record | `python scripts/pb_records.py create <collection> '<json>'` | `references/records-api.md` |
+| Update record | `python scripts/pb_records.py update <collection> <id> '<json>'` | `references/records-api.md` |
+| Delete record | `python scripts/pb_records.py delete <collection> <id>` | `references/records-api.md` |
+| List backups | `python scripts/pb_backups.py list` | `references/backups-api.md` |
+| Create backup | `python scripts/pb_backups.py create [name]` | `references/backups-api.md` |
+| Restore backup | `python scripts/pb_backups.py restore <key>` | `references/backups-api.md` |
+| Delete backup | `python scripts/pb_backups.py delete <key>` | `references/backups-api.md` |
+| Generate migration | `python scripts/pb_create_migration.py "<description>"` | `references/migrations.md` |
+| API rules design     | — | `references/api-rules-guide.md`   |
+| Common pitfalls      | — | `references/gotchas.md`           |
+| Relation patterns    | — | `references/relation-patterns.md` |
+| JS SDK reference     | — | `references/js-sdk.md`            |
+| JSVM hooks           | — | `references/jsvm-hooks.md`        |
+| File handling        | — | `references/file-handling.md`     |
+| Run E2E tests        | `python3 test_e2e.py` | `references/e2e-testing.md` |
+| E2E test helpers     | Import from `scripts/pb_e2e_helpers.py` | `references/e2e-testing.md` |
+| Go: build & run      | `go build -o myapp . && ./myapp serve`                          | `references/go-framework.md`   |
+| Go: dev run          | `go run . serve`                                                 | `references/go-framework.md`   |
+| Go: create superuser | `go run . superuser create email pw`                             | `references/go-framework.md`   |
+| Go: migration template | `assets/migration-template.go`       | `references/go-migrations.md`  |

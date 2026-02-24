@@ -4,9 +4,7 @@ Reusable E2E test helpers for PocketBase projects.
 Provides a test runner, HTTP helpers, and user lifecycle management
 for writing project-specific access-control tests.
 
-Usage:
-    import sys, os
-    sys.path.insert(0, os.path.join(os.getcwd(), ".claude", "skills", "pocketbase", "scripts"))
+Usage (see references/e2e-testing.md for path setup):
     from pb_e2e_helpers import TestRunner, req, user_login, create_test_user, ...
 """
 

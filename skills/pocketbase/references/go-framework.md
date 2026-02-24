@@ -88,7 +88,7 @@ project/
 After starting, verify with:
 
 ```bash
-python .claude/skills/pocketbase/scripts/pb_health.py
+python scripts/pb_health.py
 ```
 
 ---

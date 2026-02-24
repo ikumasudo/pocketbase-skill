@@ -43,18 +43,18 @@ Place the relation field on the **"many" side** (Posts), pointing to the "one" s
 
 ```bash
 # Get posts by a specific user (filter from "many" side)
-python ~/.claude/skills/pocketbase/scripts/pb_records.py list posts \
+python scripts/pb_records.py list posts \
   --filter 'author = "USER_ID"' --expand "author"
 
 # Expand the author on a single post
-python ~/.claude/skills/pocketbase/scripts/pb_records.py get posts POST_ID \
+python scripts/pb_records.py get posts POST_ID \
   --expand "author"
 ```
 
 **Back-relation (from "one" side):** To get all posts for a user, expand the back-relation:
 
 ```bash
-python ~/.claude/skills/pocketbase/scripts/pb_records.py get users USER_ID \
+python scripts/pb_records.py get users USER_ID \
   --expand "posts_via_author"
 ```
 
@@ -83,7 +83,7 @@ Store multiple IDs in a single relation field. Simple but limited.
 
 ```bash
 # Filter posts with a specific tag
-python ~/.claude/skills/pocketbase/scripts/pb_records.py list posts \
+python scripts/pb_records.py list posts \
   --filter 'tags ?= "TAG_ID"' --expand "tags"
 ```
 
@@ -130,7 +130,7 @@ Create a dedicated collection for the relationship. More flexible.
 
 ```bash
 # Get tags for a post via junction
-python ~/.claude/skills/pocketbase/scripts/pb_records.py list post_tags \
+python scripts/pb_records.py list post_tags \
   --filter 'post = "POST_ID"' --expand "tag" --sort "sortOrder"
 ```
 
@@ -155,11 +155,11 @@ Examples:
 
 ```bash
 # Expand all comments for a post (back-relation)
-python ~/.claude/skills/pocketbase/scripts/pb_records.py get posts POST_ID \
+python scripts/pb_records.py get posts POST_ID \
   --expand "comments_via_post"
 
 # Expand nested back-relation (comments with their authors)
-python ~/.claude/skills/pocketbase/scripts/pb_records.py get posts POST_ID \
+python scripts/pb_records.py get posts POST_ID \
   --expand "comments_via_post.author"
 ```
 
@@ -173,7 +173,7 @@ For large datasets or when you need sorting/filtering, query the related collect
 
 ```bash
 # Better than expanding back-relation for large datasets
-python ~/.claude/skills/pocketbase/scripts/pb_records.py list comments \
+python scripts/pb_records.py list comments \
   --filter 'post = "POST_ID"' \
   --sort "-created" \
   --page 1 --perPage 20
@@ -276,15 +276,15 @@ For multi-value relation fields, use `+` and `-` modifiers to avoid replacing al
 
 ```bash
 # Append a tag (does not replace existing tags)
-python ~/.claude/skills/pocketbase/scripts/pb_records.py update posts POST_ID \
+python scripts/pb_records.py update posts POST_ID \
   '{"tags+": ["NEW_TAG_ID"]}'
 
 # Remove a specific tag
-python ~/.claude/skills/pocketbase/scripts/pb_records.py update posts POST_ID \
+python scripts/pb_records.py update posts POST_ID \
   '{"tags-": ["TAG_ID_TO_REMOVE"]}'
 
 # Replace ALL tags (overwrites existing)
-python ~/.claude/skills/pocketbase/scripts/pb_records.py update posts POST_ID \
+python scripts/pb_records.py update posts POST_ID \
   '{"tags": ["TAG_ID_1", "TAG_ID_2"]}'
 ```
 

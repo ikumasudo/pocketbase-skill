@@ -63,7 +63,7 @@ Same convention as JS: `{unix_timestamp}_{description}.go`
 1700000002_seed_categories.go
 ```
 
-Use the template at `.claude/skills/pocketbase/assets/migration-template.go` as a starting point.
+Use the template at `assets/migration-template.go` as a starting point.
 
 ---
 
