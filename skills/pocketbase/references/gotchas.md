@@ -196,6 +196,16 @@ When updating a collection via `PATCH /api/collections/{id}`, the `fields` prope
 
 **Best practice:** For multi-collection setups, use `import` instead of individual create+update — it handles everything in one call.
 
+### Self-Referencing Relations Fail on Import
+
+A collection cannot reference itself during creation because it doesn't exist yet when the relation field is resolved. This also applies to circular cross-references (A→B, B→A).
+
+**Workaround — 2-pass strategy:**
+1. Create (or import) the collection **without** the self-referencing relation field
+2. `PATCH` the collection to add the relation field afterward
+
+This applies to both single-collection self-references (`categories.parent → categories`) and mutual cross-references across collections.
+
 ### Zero Defaults, Not Null
 
 PocketBase stores **zero values** for missing fields, not `null` (except JSON fields):
@@ -361,6 +371,22 @@ System collections have underscore-prefixed names:
 | `_mfas` | Multi-factor auth records |
 | `_otps` | One-time password records |
 
+### Default Collections (Not Just System)
+
+In addition to underscore-prefixed system collections, PocketBase creates a default `users` auth collection on first startup:
+
+| Collection | Type | Pre-existing? | How to Customize |
+|------------|------|---------------|------------------|
+| `_superusers` | system auth | Yes (immutable name) | Limited — system-managed |
+| `users` | auth | Yes (created by default) | `PATCH /api/collections/users` to add fields/rules |
+
+**Common mistake:** Trying to `POST /api/collections` with `"name": "users"` — this fails because `users` already exists. Always use `PATCH` to customize the default `users` collection:
+
+```bash
+# Add custom fields to the existing users collection
+python scripts/pb_collections.py update users '{"fields":[...existing fields..., {"name":"role","type":"select","values":["member","admin"]}]}'
+```
+
 ### Reserved Field Names
 
 These field names are reserved and cannot be used in custom collections:
@@ -411,17 +437,21 @@ import (
 
 ### Typed Record Access
 
-Go uses typed getters instead of the generic `record.get("field")` used in JSVM:
+Go uses **PascalCase** typed getters. JSVM uses **camelCase** and has both a generic `record.get()` AND typed getters:
 
-| Go | JSVM |
-|----|------|
-| `record.GetString("name")` | `record.get("name")` |
-| `record.GetInt("count")` | `record.get("count")` |
-| `record.GetBool("active")` | `record.get("active")` |
-| `record.GetStringSlice("tags")` | `record.get("tags")` |
-| `record.GetDateTime("created")` | `record.get("created")` |
+| Go (PascalCase) | JSVM (camelCase) | JSVM Generic |
+|-----------------|------------------|--------------|
+| `record.GetString("name")` | `record.getString("name")` | `record.get("name")` |
+| `record.GetInt("count")` | `record.getInt("count")` | `record.get("count")` |
+| `record.GetFloat("price")` | `record.getFloat("price")` | `record.get("price")` |
+| `record.GetBool("active")` | `record.getBool("active")` | `record.get("active")` |
+| `record.GetStringSlice("tags")` | `record.getStringSlice("tags")` | `record.get("tags")` |
+| `record.GetDateTime("created")` | `record.getDateTime("created")` | `record.get("created")` |
+| `record.Set("field", val)` | `record.set("field", val)` | — |
 
-Using the wrong getter (e.g., `GetString` on a number field) returns the zero value without error.
+> **JSVM has BOTH** `record.get("field")` (generic) and typed getters like `record.getString("field")`. The generic getter is not the "only" JSVM API — typed getters also exist and are useful for type safety.
+
+Using the wrong getter (e.g., `GetString` on a number field) returns the zero value without error in Go. In JSVM, `record.get()` returns the raw value regardless of type.
 
 ### `e.Next()` Error Propagation
 

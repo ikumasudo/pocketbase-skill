@@ -14,10 +14,26 @@ import urllib.request
 # ---------------------------------------------------------------------------
 
 def _load_env_file():
-    """Read .env file from project root (simple key=value parser)."""
-    env_path = os.path.join(os.getcwd(), ".env")
-    if not os.path.isfile(env_path):
-        return
+    """Read .env file from cwd or nearest parent directory (simple key=value parser).
+
+    Searches the current working directory first, then walks up parent
+    directories until a .env file is found or the filesystem root is reached.
+    This supports monorepo setups where scripts run from a subdirectory.
+    """
+    # Walk up from cwd to find the nearest .env file
+    search_dir = os.path.abspath(os.getcwd())
+    env_path = None
+    while True:
+        candidate = os.path.join(search_dir, ".env")
+        if os.path.isfile(candidate):
+            env_path = candidate
+            break
+        parent = os.path.dirname(search_dir)
+        if parent == search_dir:
+            # Reached filesystem root without finding .env
+            return
+        search_dir = parent
+
     with open(env_path, "r") as f:
         for line in f:
             line = line.strip()

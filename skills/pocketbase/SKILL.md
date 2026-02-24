@@ -239,7 +239,7 @@ kill $(pgrep -f 'pocketbase serve')
 
 *Required when performing superuser operations.
 
-If environment variables are not set, the `.env` file in the project root will be loaded.
+If environment variables are not set, the `.env` file will be loaded from the **current working directory**. If not found there, parent directories are searched up to the filesystem root (useful for monorepo setups where scripts may run from a subdirectory).
 
 ```env
 PB_URL=http://127.0.0.1:8090
@@ -248,6 +248,23 @@ PB_SUPERUSER_PASSWORD=your-password
 ```
 
 **Important:** If environment variables are not set, confirm the values with the user before executing operations. When writing credentials to a `.env` file, ensure that `.env` is included in `.gitignore`.
+
+### `pb_config.py` Exports
+
+All PB scripts share this module. Available exports:
+
+| Export | Type | Description |
+|--------|------|-------------|
+| `PB_URL` | `str` | PocketBase base URL (from env or default `http://127.0.0.1:8090`) |
+| `PB_SUPERUSER_EMAIL` | `str` | Superuser email (from env) |
+| `PB_SUPERUSER_PASSWORD` | `str` | Superuser password (from env) |
+| `pb_request(method, path, data, token, raw_response)` | function | Low-level HTTP request to PB API |
+| `pb_authed_request(method, path, data, raw_response)` | function | Auto-authenticated superuser request (retries on 401) |
+| `get_superuser_token(force)` | function | Get cached superuser bearer token |
+| `print_result(success, status, data)` | function | Print structured JSON output |
+| `PBRequestError` | exception | Raised on HTTP errors (has `.status` and `.data`) |
+
+> **Do not** invent exports that don't exist (e.g., `get_config`). Check this table or read `pb_config.py` directly.
 
 ### Connection Check
 
@@ -312,6 +329,8 @@ Collection types:
 - `auth` — Auth collection (automatically adds email, password, username, etc.)
 - `view` — Read-only SQL view (requires `viewQuery`)
 
+> **Warning:** PocketBase ships with a `users` auth collection already created. Do **not** `POST` to create a new `users` collection — it will fail with a name conflict. Instead, use `PATCH /api/collections/users` (or `pb_collections.py update users '{...}'`) to customize the existing collection (add fields, change rules, etc.).
+
 ### Batch Creation (Recommended for multi-collection setups)
 
 When creating 3+ collections (especially with relations), use import instead of individual create calls:
@@ -351,6 +370,15 @@ Example `collections.json`:
 ```
 
 This replaces the Phase 1 (create without relations) → Phase 2 (get IDs) → Phase 3 (update with relations) workflow.
+
+**Import pitfalls:**
+- **Self-referencing relations** (e.g., `parent` field pointing to the same collection) fail on import because the collection doesn't exist yet when the relation is resolved. Use a 2-pass strategy: create the collection without the self-referencing field, then PATCH to add it:
+  ```bash
+  python scripts/pb_collections.py create '{"name":"categories","type":"base","fields":[{"name":"name","type":"text","required":true}]}'
+  python scripts/pb_collections.py update categories '{"fields":[{"name":"name","type":"text","required":true},{"name":"parent","type":"relation","collectionId":"categories","maxSelect":1}]}'
+  ```
+- **Indexes** must be SQL strings (e.g., `"CREATE INDEX idx_name ON posts (title)"`), not objects
+- **Collection names** are case-sensitive and must match exactly in `collectionId` references
 
 ### Update
 

@@ -72,6 +72,7 @@ Key points:
 - `pre_cleanup()` makes tests idempotent (safe to re-run)
 - Track created IDs in variables for cleanup
 - Call `sys.exit(t.summary())` to set the process exit code
+- **Initialize ALL cleanup variables** (e.g., `user_id = None`, `record_id = None`) **before** the `try` block — otherwise a `NameError` in `finally` will mask the real error
 
 ## Expected HTTP Status Codes
 
@@ -287,6 +288,9 @@ TEST_EMAILS = ["alice@test.example", "bob@test.example"]
 
 def main():
     t = TestRunner("Blog — E2E Access Control Tests")
+    # IMPORTANT: Initialize ALL cleanup variables BEFORE the try block.
+    # If creation fails and these aren't defined, the finally block
+    # raises NameError, masking the real error.
     alice_id = bob_id = post_id = None
 
     try:

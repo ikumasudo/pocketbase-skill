@@ -121,6 +121,11 @@ PUT /api/collections/import
 
 **Response (204):** No content.
 
+**Import limitations:**
+- **Self-referencing relations** (e.g., `categories.parent → categories`) fail because the collection doesn't exist yet during import. Use a 2-pass strategy: import without the self-ref field, then PATCH to add it.
+- **Indexes** must be SQL strings (`"CREATE INDEX ..."`), not JSON objects.
+- **Circular cross-references** (A→B, B→A) have the same problem — import one side first, then PATCH the other.
+
 ## Collection Types
 
 | Type | Description |

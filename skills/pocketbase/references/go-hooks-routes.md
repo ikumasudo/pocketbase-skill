@@ -270,7 +270,7 @@ err := app.NewMailClient().Send(message)
 | Find by filter | `$app.findFirstRecordByFilter("col", "f={:v}", {v: val})` | `app.FindFirstRecordByFilter("col", "f={:v}", dbx.Params{"v": val})` |
 | Save record | `$app.save(record)` | `app.Save(record)` |
 | Delete record | `$app.delete(record)` | `app.Delete(record)` |
-| Get field | `record.get("field")` | `record.GetString("field")`, `record.GetInt("field")` |
+| Get field | `record.get("field")`, `record.getString("field")` | `record.GetString("field")`, `record.GetInt("field")` |
 | Set field | `record.set("field", value)` | `record.Set("field", value)` |
 | New record | `new Record(collection)` | `core.NewRecord(collection)` |
 | Custom route | `routerAdd("GET", "/path", handler)` | `se.Router.GET("/path", handler)` |

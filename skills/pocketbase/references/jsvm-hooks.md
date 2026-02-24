@@ -9,8 +9,12 @@ Server-side JavaScript hooks for PocketBase v0.23+ using the built-in `goja` JS 
 ## Setup
 
 1. Create `pb_hooks/` directory in your PocketBase project root
-2. Place `*.pb.js` files in that directory
-3. PocketBase auto-loads and watches for changes — **no restart required**
+2. Place `*.pb.js` files in that directory (must use `.pb.js` extension)
+3. PocketBase watches for changes — **edits** to existing files are hot-reloaded, but **new files** may not be picked up without a restart
+4. If a hook does not fire after creating a new file:
+   - Check `pb.log` for syntax errors (JSVM parse failures are logged there)
+   - Verify the file uses `*.pb.js` extension (not `.js` alone)
+   - Restart PocketBase: `kill $(pgrep -f 'pocketbase serve') && nohup ./pocketbase serve --http=127.0.0.1:8090 > pb.log 2>&1 &`
 
 ### TypeScript Types
 
@@ -43,6 +47,45 @@ Each lifecycle has three phases:
 | `onRecordAfterCreateSuccess(fn)` | After transaction commits | Trigger external integrations |
 
 Same pattern for `Update` and `Delete`.
+
+### DB Hooks vs Request Hooks
+
+PocketBase has **two** hook categories. Using the wrong one is a common mistake:
+
+| | Request Hooks | DB Hooks |
+|-|---------------|----------|
+| **Names** | `onRecordCreateRequest`, `onRecordUpdateRequest`, `onRecordDeleteRequest` | `onRecordCreate`, `onRecordUpdate`, `onRecordDelete` |
+| **Fires on** | REST API requests only | ALL saves (API, hooks, migrations, `$app.save()`) |
+| **Has `e.auth`?** | Yes — `$app.requestInfo(e.request).auth` | No — no request context |
+| **Has `e.request`?** | Yes | No |
+| **Use for** | Access control, audit logging with user info | Data transforms, computed fields, cascades |
+
+**WRONG — accessing auth in a DB hook (will be `undefined`):**
+```js
+onRecordCreate((e) => {
+    const info = $app.requestInfo(e.request)  // ERROR: e.request is undefined
+    const user = info.auth
+    e.next()
+}, "posts")
+```
+
+**CORRECT — use a Request hook when you need auth context:**
+```js
+onRecordCreateRequest((e) => {
+    const info = $app.requestInfo(e.request)
+    const user = info.auth
+    if (!user || user.getString("role") !== "admin") {
+        throw new ForbiddenError("Admin only")
+    }
+    e.next()
+}, "posts")
+```
+
+**For custom endpoints**, access auth via `$app.requestInfo(e.request).auth` (see [Request & Response Handling](#reading-request-data)).
+
+Request hook names: `onRecordCreateRequest`, `onRecordUpdateRequest`, `onRecordDeleteRequest`, `onRecordAuthWithPasswordRequest`, `onRecordAuthWithOAuth2Request`, `onRecordAuthRefreshRequest`
+
+DB hook names: `onRecordCreate`, `onRecordCreateExecute`, `onRecordAfterCreateSuccess`, `onRecordUpdate`, `onRecordUpdateExecute`, `onRecordAfterUpdateSuccess`, `onRecordDelete`, `onRecordDeleteExecute`, `onRecordAfterDeleteSuccess`
 
 ### The `e.next()` Pattern
 
@@ -259,6 +302,32 @@ $app.findCollectionByNameOrId("posts")
 // Raw DB query
 $app.db().newQuery("SELECT id FROM posts WHERE status = 'published'").column()
 ```
+
+---
+
+## JSVM Record API
+
+The JSVM provides both a generic getter and typed getters for record fields:
+
+```js
+// Generic getter — returns untyped value
+record.get("fieldName")
+
+// Typed getters — return correctly typed values
+record.getString("name")        // string
+record.getInt("count")          // integer
+record.getFloat("price")        // float
+record.getBool("active")        // boolean
+record.getStringSlice("tags")   // string array
+record.getDateTime("due_date")  // DateTime object
+
+// Setter
+record.set("fieldName", value)
+```
+
+> **Note:** JSVM uses **camelCase** (`getString`, `getInt`). Go uses **PascalCase** (`GetString`, `GetInt`). Do not mix them — Go getters will not work in JSVM hooks and vice versa.
+
+Both `record.get("field")` and typed getters like `record.getString("field")` are available in JSVM. Use typed getters when you need type safety; use `record.get()` for dynamic access.
 
 ---
 
