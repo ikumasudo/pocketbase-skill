@@ -1,11 +1,13 @@
 ---
 name: pocketbase
 description: >-
-  Skill for operating PocketBase backend REST API. Provides collection CRUD,
-  record CRUD, superuser/user authentication, backup & restore,
-  migration file generation, and design guidance for API rules, relations,
-  and security patterns. Use for requests related to PocketBase,
-  pb_migrations, collection management, record operations, and backend design.
+  Skill for operating PocketBase backend via REST API and Go package mode.
+  Provides collection CRUD, record CRUD, superuser/user authentication,
+  backup & restore, migration file generation (JS and Go), Go hooks,
+  custom routes, and design guidance for API rules, relations, and security
+  patterns. Use for requests related to PocketBase, pb_migrations,
+  collection management, record operations, Go framework embedding, and
+  backend design.
 license: MIT
 metadata:
   version: "1.0.0"
@@ -14,7 +16,7 @@ allowed-tools: Read Write Edit Bash Grep Glob
 
 # PocketBase Skill
 
-Skill for operating a PocketBase v0.23+ backend via REST API. Uses Python scripts (standard library only) to perform authentication, collection CRUD, record CRUD, backup, migration file generation, and includes design guidance for API rules, relations, and security patterns.
+Skill for operating a PocketBase v0.23+ backend via REST API and as a Go package. Uses Python scripts (standard library only) to perform authentication, collection CRUD, record CRUD, backup, migration file generation, and includes design guidance for API rules, relations, and security patterns. Supports Go package mode with Go migrations, hooks, custom routes, and middleware.
 
 ## Skill Resources
 
@@ -25,6 +27,20 @@ All resources for this skill are bundled in the skill directory at `.claude/skil
 - **Assets**: `.claude/skills/pocketbase/assets/` — Templates and static files
 
 When you need to look up PocketBase details or find skill-related files, check this directory first — everything you need is already here. There is no need to search the user's home directory or other projects.
+
+## Mode Detection
+
+Determine the project mode:
+
+1. `go.mod` exists and contains `github.com/pocketbase/pocketbase` → **Go package mode**
+2. Otherwise → **Standalone mode** (existing workflow)
+
+Go package mode additional references:
+- Setup & structure → `Read .claude/skills/pocketbase/references/go-framework.md`
+- Migrations → `Read .claude/skills/pocketbase/references/go-migrations.md`
+- Hooks & custom routes → `Read .claude/skills/pocketbase/references/go-hooks-routes.md`
+
+Go package mode still uses the same REST API. Python scripts (`pb_collections.py`, etc.) and E2E tests work as-is.
 
 ## 0. Design Workflow & Decision Making
 
@@ -73,6 +89,12 @@ Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, max
 - [ ] Routes use `{paramName}` syntax (not `:paramName`)
 - [ ] `@collection` references in API rules use `?=` (not `=`) — `=` breaks with 2+ rows
 
+**Go package mode additional checks:**
+- [ ] Migration files use `package migrations` + `func init()` + `m.Register()` structure
+- [ ] Rules set with `types.Pointer("rule")` (not direct string assignment — `*string` type)
+- [ ] `_ "yourmodule/migrations"` blank import exists in `main.go`
+- [ ] Hooks call `return e.Next()` (omitting causes request hang)
+
 ### Bootstrap (First-Time Setup)
 
 When PocketBase is not yet running:
@@ -100,7 +122,10 @@ When building a PocketBase application, follow this sequence:
 5. **API rules** — Set security rules (`Read .claude/skills/pocketbase/references/api-rules-guide.md`)
    - **Default to `null` (deny all). Open only what is needed.**
    - `null` = superuser only, `""` = anyone including guests
-6. **Create** — Use scripts or migrations to create collections
+6. **Create** — Create schema based on mode
+   - **Standalone**: Scripts (`pb_collections.py`) or JS migrations (`pb_migrations/*.js`)
+   - **Go package**: Go migrations (`migrations/*.go`) — `Read .claude/skills/pocketbase/references/go-migrations.md`
+   - Hooks/routes: Standalone uses JSVM (`pb_hooks/*.pb.js`), Go uses Go code — `Read .claude/skills/pocketbase/references/go-hooks-routes.md`
 7. **Seed data** — Insert sample records for verification
 8. **E2E test** — Generate and run a project-specific E2E test script
    - Read `.claude/skills/pocketbase/references/e2e-testing.md`
@@ -140,6 +165,9 @@ After creating or modifying collections:
 | JSVM hooks (server) | `Read .claude/skills/pocketbase/references/jsvm-hooks.md` |
 | File handling | `Read .claude/skills/pocketbase/references/file-handling.md` |
 | E2E testing patterns | `Read .claude/skills/pocketbase/references/e2e-testing.md` |
+| Go framework setup   | `Read .claude/skills/pocketbase/references/go-framework.md`    |
+| Go migrations        | `Read .claude/skills/pocketbase/references/go-migrations.md`   |
+| Go hooks & routes    | `Read .claude/skills/pocketbase/references/go-hooks-routes.md` |
 
 ## 1. Prerequisites and Configuration
 
@@ -542,3 +570,7 @@ Validation error example:
 | File handling        | — | `.claude/skills/pocketbase/references/file-handling.md`     |
 | Run E2E tests        | `python3 test_e2e.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
 | E2E test helpers     | Import from `.claude/skills/pocketbase/scripts/pb_e2e_helpers.py` | `.claude/skills/pocketbase/references/e2e-testing.md` |
+| Go: build & run      | `go build -o myapp . && ./myapp serve`                          | `.claude/skills/pocketbase/references/go-framework.md`   |
+| Go: dev run          | `go run . serve`                                                 | `.claude/skills/pocketbase/references/go-framework.md`   |
+| Go: create superuser | `go run . superuser create email pw`                             | `.claude/skills/pocketbase/references/go-framework.md`   |
+| Go: migration template | `.claude/skills/pocketbase/assets/migration-template.go`       | `.claude/skills/pocketbase/references/go-migrations.md`  |

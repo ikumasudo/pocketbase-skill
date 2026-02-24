@@ -368,3 +368,76 @@ These field names are reserved and cannot be used in custom collections:
 `id`, `created`, `updated`, `collectionId`, `collectionName`, `expand`
 
 Attempting to create fields with these names will result in a validation error.
+
+---
+
+## Go Package Mode
+
+Pitfalls specific to using PocketBase as a Go package (`import "github.com/pocketbase/pocketbase"`).
+
+### JSVM File Coexistence
+
+`pb_hooks/*.pb.js` files are **still loaded** in Go package mode. If both a Go hook and a JSVM hook bind to the same event (e.g., `OnRecordCreate("posts")`), both will fire. This causes duplicate side effects and hard-to-debug behavior. **Pick one language for hooks — don't mix.**
+
+### JS and Go Migration Mixing
+
+Both `pb_migrations/*.js` and Go `migrations/*.go` files are loaded at startup. Migration execution order across languages is **by timestamp** (filename prefix), but mixing languages makes the migration history harder to reason about. **Stick to one language for migrations.**
+
+### `types.Pointer()` for Rules
+
+Collection rules are `*string` in Go. You cannot assign a string literal directly:
+
+```go
+// WRONG — compile error
+collection.ListRule = ""
+
+// CORRECT
+collection.ListRule = types.Pointer("")    // allow everyone
+collection.ListRule = types.Pointer("@request.auth.id != ''")  // auth required
+collection.ListRule = nil                   // superuser only
+```
+
+Import: `"github.com/pocketbase/pocketbase/tools/types"`
+
+### Blank Import Forgotten
+
+Without `_ "yourmodule/migrations"` in `main.go`, Go migration files are never registered. **PocketBase reports no error** — migrations simply don't run. Always verify the blank import exists:
+
+```go
+import (
+    _ "yourmodule/migrations"  // DO NOT FORGET
+)
+```
+
+### Typed Record Access
+
+Go uses typed getters instead of the generic `record.get("field")` used in JSVM:
+
+| Go | JSVM |
+|----|------|
+| `record.GetString("name")` | `record.get("name")` |
+| `record.GetInt("count")` | `record.get("count")` |
+| `record.GetBool("active")` | `record.get("active")` |
+| `record.GetStringSlice("tags")` | `record.get("tags")` |
+| `record.GetDateTime("created")` | `record.get("created")` |
+
+Using the wrong getter (e.g., `GetString` on a number field) returns the zero value without error.
+
+### `e.Next()` Error Propagation
+
+In Go, `e.Next()` returns an `error` that **must** be returned from the hook:
+
+```go
+// WRONG — error is silently discarded
+app.OnRecordCreate("posts").BindFunc(func(e *core.RecordEvent) error {
+    e.Next()
+    return nil
+})
+
+// CORRECT — error propagates up the chain
+app.OnRecordCreate("posts").BindFunc(func(e *core.RecordEvent) error {
+    return e.Next()
+})
+```
+
+In JSVM, `e.next()` has no return value, so this mistake doesn't exist there.
