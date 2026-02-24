@@ -9,6 +9,7 @@ Compatible with the [Agent Skills](https://github.com/vercel-labs/skills) specif
 | Skill | Description |
 |-------|-------------|
 | `pocketbase` | Collection CRUD, record CRUD, superuser/user authentication, backup & restore, migration file generation, and design guidance for API rules, relations, and security patterns |
+| `pb-react-spa` | React SPA frontend setup for PocketBase — Vite + TanStack Router + TanStack Query + Tailwind/Shadcn UI + Biome |
 
 ## Installation
 

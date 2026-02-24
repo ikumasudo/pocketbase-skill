@@ -168,6 +168,7 @@ After creating or modifying collections:
 | Go framework setup   | `Read references/go-framework.md`    |
 | Go migrations        | `Read references/go-migrations.md`   |
 | Go hooks & routes    | `Read references/go-hooks-routes.md` |
+| React SPA frontend | `pb-react-spa` skill (separate skill) |
 
 ## 1. Prerequisites and Configuration
 
