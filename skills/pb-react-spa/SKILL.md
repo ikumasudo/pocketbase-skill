@@ -313,7 +313,11 @@ cp -r frontend/dist/* backend/pb_public/
 
 PocketBase automatically serves files from `pb_public/` and supports SPA client-side routing (non-existent paths fall back to `index.html`).
 
-**Details:** `Read references/dev-and-deploy.md`
+### Docker / Docker Compose / Reverse Proxy
+
+For production deployment including Dockerfiles (binary mode & Go package mode), Docker Compose, Caddy/Nginx reverse proxy, and executable distribution:
+
+**Details:** `Read references/deployment.md`
 
 ## 5. Setup Checklist
 
@@ -335,5 +339,6 @@ Verification items after scaffolding is complete:
 | TanStack Query + PB integration | `Read references/react-query-pocketbase.md` |
 | Authentication patterns | `Read references/auth-patterns.md` |
 | TypeScript type generation | `Read references/typegen.md` |
-| Development & deployment | `Read references/dev-and-deploy.md` |
+| Development workflow | `Read references/dev-and-deploy.md` |
+| Production deployment (Docker, binary, proxy) | `Read references/deployment.md` |
 | JS SDK details | `Read references/js-sdk.md` in the PocketBase skill |

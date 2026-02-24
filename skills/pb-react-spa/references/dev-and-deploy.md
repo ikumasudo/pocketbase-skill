@@ -149,59 +149,6 @@ PocketBase automatically handles SPA fallback for `pb_public/`. Even when the br
 
 No additional configuration is needed.
 
-### Single Binary Distribution
+### Production Deployment (Docker, Binary, Reverse Proxy)
 
-Bundle the PocketBase binary + `pb_public/` + `pb_data/` + `pb_migrations/` for distribution:
-
-```
-deploy/
-├── pocketbase          ← Binary
-├── pb_public/          ← Frontend build artifacts
-├── pb_migrations/      ← Migration files
-└── .env                ← Production environment variables
-```
-
-```bash
-./pocketbase serve --http=0.0.0.0:8090
-```
-
-This alone runs the API + SPA + Admin UI all in a single process.
-
-### Production Environment Variables
-
-In production, PocketBase serves the SPA from `pb_public/`, so all API requests are same-origin. The PocketBase SDK with `new PocketBase()` (no arguments) automatically uses the current origin — no environment variables are needed for the PB URL.
-
-### Reverse Proxy Integration
-
-Configuration with a reverse proxy (Nginx / Caddy) in front of PocketBase:
-
-**Caddy (recommended — automatic HTTPS):**
-
-```
-example.com {
-    reverse_proxy 127.0.0.1:8090
-}
-```
-
-**Nginx:**
-
-```nginx
-server {
-    listen 80;
-    server_name example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8090;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-
-        # SSE (realtime) support
-        proxy_buffering off;
-        proxy_cache off;
-    }
-}
-```
-
-> **Note:** Even with a reverse proxy configuration, PocketBase serves the SPA directly, so no separate location block for the frontend is needed. `proxy_buffering off` is required for SSE (realtime subscriptions).
+For comprehensive production deployment options including Docker, Docker Compose, executable distribution, and reverse proxy configurations, see `Read references/deployment.md`.
