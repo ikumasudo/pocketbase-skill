@@ -119,23 +119,7 @@ Verify that the build completes successfully. To check the dev server, run `npm 
 
 After scaffolding, add the following configurations in order.
 
-### 2-1. Environment Variables
-
-Create **`frontend/.env`**:
-
-```env
-VITE_PB_URL=http://127.0.0.1:8090
-```
-
-Also create **`frontend/.env.example`** (for Git tracking):
-
-```env
-VITE_PB_URL=http://127.0.0.1:8090
-```
-
-> The `VITE_` prefix is required. This allows Vite to expose the environment variable to the client side.
-
-### 2-2. PocketBase Client
+### 2-1. PocketBase Client
 
 Create **`frontend/src/lib/pocketbase.ts`**:
 
@@ -143,9 +127,7 @@ Create **`frontend/src/lib/pocketbase.ts`**:
 import PocketBase from "pocketbase";
 import type { TypedPocketBase } from "../types/pocketbase-types";
 
-export const pb = new PocketBase(
-  import.meta.env.VITE_PB_URL || "http://127.0.0.1:8090",
-) as TypedPocketBase;
+export const pb = new PocketBase() as TypedPocketBase;
 
 pb.autoCancellation(false);
 ```
@@ -155,13 +137,11 @@ pb.autoCancellation(false);
 > ```ts
 > // Temporary version before type generation
 > import PocketBase from "pocketbase";
-> export const pb = new PocketBase(
->   import.meta.env.VITE_PB_URL || "http://127.0.0.1:8090",
-> );
+> export const pb = new PocketBase();
 > pb.autoCancellation(false);
 > ```
 
-### 2-3. Vite Proxy Configuration
+### 2-2. Vite Proxy Configuration
 
 Edit **`frontend/vite.config.ts`** to add `server.proxy`.
 
@@ -202,10 +182,12 @@ export default config;
 ```
 
 > `/api` is the PocketBase REST API, and `/_` is for PocketBase internal endpoints (realtime SSE, etc.).
+>
+> **Why no URL in the PocketBase client?** The proxy makes all PocketBase API requests same-origin during development (browser sees `localhost:5173/api/...`). In production, PocketBase serves the SPA from `pb_public/`, which is also same-origin. Since both environments are same-origin, `new PocketBase()` (no arguments) works everywhere — no environment variables needed.
 
 **Important:** Do not modify the generated plugins array. Only add `server.proxy`.
 
-### 2-4. TypeScript Type Generation
+### 2-3. TypeScript Type Generation
 
 Generate types while PocketBase is running:
 
@@ -227,7 +209,7 @@ Add an npm script to **`frontend/package.json`**:
 
 **Details:** `Read references/typegen.md`
 
-### 2-5. TanStack Query Configuration
+### 2-4. TanStack Query Configuration
 
 Create a QueryClient and set up the Provider in the root component.
 
@@ -275,7 +257,7 @@ export function getRouter() {
 
 **Details:** `Read references/react-query-pocketbase.md`
 
-### 2-6. Authentication Integration
+### 2-5. Authentication Integration
 
 If authentication is needed, configure the following:
 
@@ -338,7 +320,6 @@ PocketBase automatically serves files from `pb_public/` and supports SPA client-
 Verification items after scaffolding is complete:
 
 - [ ] `npm run build` succeeds
-- [ ] `.env` has `VITE_PB_URL` configured
 - [ ] `src/lib/pocketbase.ts` has been created
 - [ ] Proxy configuration has been added to `vite.config.ts`
 - [ ] `components.json` exists (Shadcn UI initialized)

@@ -101,9 +101,7 @@ export type TypedPocketBase = PocketBase & {
 import PocketBase from "pocketbase";
 import type { TypedPocketBase } from "@/types/pocketbase-types";
 
-export const pb = new PocketBase(
-  import.meta.env.VITE_PB_URL,
-) as TypedPocketBase;
+export const pb = new PocketBase() as TypedPocketBase;
 ```
 
 The return value of `pb.collection("posts")` automatically becomes `RecordService<PostsResponse>`.

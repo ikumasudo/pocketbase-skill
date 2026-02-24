@@ -35,29 +35,23 @@ With proxy configuration:
 - From the browser's perspective, it's same-origin so no CORS headers are needed
 - PocketBase's realtime SSE endpoints are also correctly forwarded
 
-> **PB client configuration when using proxy:** When using the proxy, you can set the PocketBase client URL to an empty string or a path:
+> **PB client configuration:** Since the proxy makes API requests same-origin, the PocketBase client needs no URL argument:
 > ```ts
-> // With proxy (development) — relative path is OK
-> const pb = new PocketBase("/");
-> // Or from environment variable (works for both dev and production)
-> const pb = new PocketBase(import.meta.env.VITE_PB_URL || "/");
+> const pb = new PocketBase();
 > ```
+> This works in both development (via Vite proxy) and production (PocketBase serves the SPA from `pb_public/`). No environment variables are needed.
 
 ### Environment Variable Management
+
+No environment variables are needed for the PocketBase URL — the Vite proxy (development) and `pb_public/` serving (production) both provide same-origin access.
+
+If you need environment variables for other purposes, use Vite's `.env` files:
 
 | File | Purpose | Git |
 |------|---------|-----|
 | `.env` | Default values for local development | Add to `.gitignore` |
 | `.env.example` | Template for team sharing | Commit |
 | `.env.production` | For production builds | Add to `.gitignore` |
-
-```env
-# .env (development)
-VITE_PB_URL=http://127.0.0.1:8090
-
-# .env.production (production — when PocketBase serves the SPA)
-VITE_PB_URL=/
-```
 
 > Only environment variables with the `VITE_` prefix are available in client-side code. Never add the `VITE_` prefix to secret values.
 
@@ -175,14 +169,7 @@ This alone runs the API + SPA + Admin UI all in a single process.
 
 ### Production Environment Variables
 
-In production, PocketBase itself serves the SPA, so communication from the frontend to PocketBase is same-origin:
-
-```env
-# .env.production
-VITE_PB_URL=/
-```
-
-Alternatively, leave the environment variable unset and let the PB client fall back to the default (`/`).
+In production, PocketBase serves the SPA from `pb_public/`, so all API requests are same-origin. The PocketBase SDK with `new PocketBase()` (no arguments) automatically uses the current origin — no environment variables are needed for the PB URL.
 
 ### Reverse Proxy Integration
 
