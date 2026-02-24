@@ -303,7 +303,10 @@ By default, the SDK automatically cancels the previous identical request when a 
 ### Disable Auto-Cancellation
 
 ```ts
-// Use a unique requestKey to track each request independently
+// Disable globally (recommended when using TanStack Query or similar libraries)
+pb.autoCancellation(false)
+
+// Or disable per request with requestKey: null
 const result = await pb.collection('posts').getList(1, 30, {
   requestKey: null,     // disable auto-cancel for this request
 })

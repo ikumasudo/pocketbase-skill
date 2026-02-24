@@ -14,6 +14,9 @@ import { pb } from "@/lib/pocketbase";
 
 Share a singleton instance across all components. See SKILL.md section 2-2 for how to create it.
 
+> **Important:** The PocketBase client must have auto-cancellation disabled (`pb.autoCancellation(false)`).
+> By default, the SDK cancels the previous pending request when a new identical one is made. This conflicts with TanStack Query's own request management (retries, deduplication, background refetching), causing silent `isAbort` errors. Disabling it globally lets TanStack Query handle request lifecycle instead.
+
 ---
 
 ## queryOptions Pattern (Recommended)
