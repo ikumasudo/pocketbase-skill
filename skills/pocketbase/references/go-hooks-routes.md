@@ -157,6 +157,10 @@ e.Redirect(http.StatusTemporaryRedirect, "/other")
 
 ### Access Auth in Routes
 
+> **Always use `e.Auth` to get the authenticated user in custom routes** — do NOT use `e.RequestInfo().Auth`. The `e.Auth` field is populated by `RequireAuth()` middleware and is always available. `e.RequestInfo()` returns `(*RequestInfo, error)` (2 values) and can fail.
+
+> **Use `e.App` inside route handlers**, not the `app` variable from the outer closure. In tests, `e.App` points to the test app instance, while a closure-captured `app` would point to the original (non-test) app.
+
 ```go
 se.Router.GET("/api/me", func(e *core.RequestEvent) error {
     authRecord := e.Auth
@@ -165,6 +169,53 @@ se.Router.GET("/api/me", func(e *core.RequestEvent) error {
     }
     return e.JSON(http.StatusOK, authRecord)
 }).Bind(apis.RequireAuth())
+```
+
+### Expand/Enrich Records in Routes
+
+Use `apis.EnrichRecords` to expand relation fields on records fetched inside a custom route:
+
+```go
+import "github.com/pocketbase/pocketbase/apis"
+
+// expand single relation
+apis.EnrichRecords(e, records, "author")
+
+// expand multiple relations
+apis.EnrichRecords(e, records, "author", "category")
+
+// expand single record
+apis.EnrichRecord(e, record, "author")
+
+// access expanded data
+if author := record.ExpandedOne("author"); author != nil {
+    name := author.GetString("name")
+}
+if tags := record.ExpandedAll("tags"); len(tags) > 0 {
+    // multi-relation
+}
+```
+
+> **Signature:** `apis.EnrichRecords(e *core.RequestEvent, records []*core.Record, defaultExpands ...string) error` — the first argument is the request event `e`, NOT `app`.
+
+### Error Response Helpers
+
+PocketBase provides typed error methods on `RequestEvent` and `RecordEvent`. Use these instead of manual `e.JSON()`:
+
+| Method | HTTP Status | Usage |
+|--------|-------------|-------|
+| `e.BadRequestError(msg, data)` | 400 | Invalid input, validation failure |
+| `e.UnauthorizedError(msg, data)` | 401 | Missing or invalid auth |
+| `e.ForbiddenError(msg, data)` | 403 | Insufficient permissions |
+| `e.NotFoundError(msg, data)` | 404 | Record/resource not found |
+| `e.InternalServerError(msg, data)` | 500 | Unexpected server error |
+
+```go
+// WRONG — manual JSON
+return e.JSON(http.StatusBadRequest, map[string]string{"message": "invalid input"})
+
+// CORRECT — PocketBase error helper
+return e.BadRequestError("invalid input", nil)
 ```
 
 ---

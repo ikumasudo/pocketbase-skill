@@ -67,6 +67,8 @@ Check field JSON: ensure properties are **flat** (no `options` wrapper) and coll
 
 Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, maxSize, mimeTypes, thumbs), `relation` (collectionId, maxSelect), `text` (min, max, pattern).
 
+**This flat-property rule applies everywhere** — inline JSON in `pb_collections.py create`, `collections.json` files used with `pb_collections.py import`, and Go migration code. If you see `"options": {` in any PocketBase field definition, it is WRONG.
+
 **Collection JSON: use `fields` key, not `schema`:**
 
 ```json

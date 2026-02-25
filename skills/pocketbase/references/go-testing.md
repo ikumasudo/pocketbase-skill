@@ -270,6 +270,7 @@ go test -v ./...       # verbose output
 | `TestAppFactory` | `func(t testing.TB) *TestApp` | Factory that creates the test app |
 | `BeforeTestFunc` | `func(t testing.TB, app *TestApp, e *core.ServeEvent)` | Runs before the request is sent |
 | `AfterTestFunc` | `func(t testing.TB, app *TestApp, res *http.Response)` | Runs after the response is received |
+| `DisableTestAppCleanup` | `bool` | If `true`, skips `testApp.Cleanup()` after scenario. **Required when sharing a single TestApp across multiple scenarios** |
 
 ---
 
@@ -465,6 +466,44 @@ if err != nil {
 ---
 
 ## Gotchas
+
+### Shared TestApp Gets Destroyed Between Scenarios
+
+When you share a single `TestApp` across multiple scenarios (e.g., creating it once in the test function and returning it from `TestAppFactory`), PocketBase calls `testApp.Cleanup()` after **each scenario** by default. This destroys the test database, causing subsequent scenarios to fail with 500 errors.
+
+**Fix:** Set `DisableTestAppCleanup: true` on every scenario that shares a TestApp:
+
+```go
+// Create app once
+app := setupTestApp(t)
+defer app.Cleanup() // clean up at the end
+
+scenarios := []tests.ApiScenario{
+    {
+        Name:                  "scenario 1",
+        // ...
+        TestAppFactory:        func(t testing.TB) *tests.TestApp { return app },
+        DisableTestAppCleanup: true, // REQUIRED for shared app
+    },
+    {
+        Name:                  "scenario 2",
+        // ...
+        TestAppFactory:        func(t testing.TB) *tests.TestApp { return app },
+        DisableTestAppCleanup: true, // REQUIRED for shared app
+    },
+}
+```
+
+**Alternative:** Use a factory that creates a new app per scenario (no `DisableTestAppCleanup` needed, but slower due to repeated SQLite cloning):
+
+```go
+setupTestApp := func(t testing.TB) *tests.TestApp {
+    testApp, err := tests.NewTestApp(testDataDir)
+    if err != nil { t.Fatal(err) }
+    bindAppHooks(testApp)
+    return testApp
+}
+```
 
 ### `test_pb_data` Must Exist Before Running Tests
 

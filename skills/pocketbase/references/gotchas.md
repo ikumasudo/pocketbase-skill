@@ -482,3 +482,59 @@ app.OnRecordCreate("posts").BindFunc(func(e *core.RecordEvent) error {
 ```
 
 In JSVM, `e.next()` has no return value, so this mistake doesn't exist there.
+
+### `e.Auth` vs `e.RequestInfo()` in Custom Routes
+
+In custom routes, **use `e.Auth` directly** to access the authenticated user — do NOT use `e.RequestInfo()`:
+
+```go
+// WRONG — RequestInfo() returns 2 values and can fail
+info := e.RequestInfo()     // compile error: 2 return values
+info, _ := e.RequestInfo()  // works but e.Auth is simpler and safer
+
+// CORRECT — e.Auth is always available after RequireAuth()
+auth := e.Auth
+if auth == nil {
+    return e.UnauthorizedError("", nil)
+}
+staffID := auth.Id
+role := auth.GetString("role")
+```
+
+`e.RequestInfo()` parses the full request body and is needed when you require `info.Body` (reading arbitrary JSON fields) or `e.App.CanAccessRecord(record, info, rule)` (manual access checks). For simple auth identity checks, always use `e.Auth`.
+
+### `e.App` vs Closure-Captured `app` in Route Handlers
+
+Inside route handlers and hooks, **use `e.App`** to access the app instance — not the `app` variable captured from the enclosing function:
+
+```go
+// WRONG — closure captures the original app, not the test app
+func BindRoutes(app core.App) {
+    app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+        se.Router.GET("/api/data", func(e *core.RequestEvent) error {
+            records, err := app.FindRecordsByFilter(...)  // uses original app
+            ...
+        })
+        return se.Next()
+    })
+}
+
+// CORRECT — e.App points to the current app (works correctly in tests)
+func BindRoutes(app core.App) {
+    app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+        se.Router.GET("/api/data", func(e *core.RequestEvent) error {
+            records, err := e.App.FindRecordsByFilter(...)  // uses current app
+            ...
+        })
+        return se.Next()
+    })
+}
+```
+
+In production both are the same, but in Go tests `e.App` correctly points to the test app while the closure-captured `app` may not.
+
+### Shared TestApp Cleanup in ApiScenario Tests
+
+When sharing a `TestApp` across multiple `ApiScenario` tests, set `DisableTestAppCleanup: true` on every scenario — otherwise PocketBase destroys the test database after the first scenario, and all subsequent scenarios fail with 500 errors.
+
+See `references/go-testing.md` "Shared TestApp Gets Destroyed Between Scenarios" for the full pattern.
