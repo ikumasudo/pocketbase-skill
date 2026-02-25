@@ -532,9 +532,3 @@ func BindRoutes(app core.App) {
 ```
 
 In production both are the same, but in Go tests `e.App` correctly points to the test app while the closure-captured `app` may not.
-
-### Shared TestApp Cleanup in ApiScenario Tests
-
-When sharing a `TestApp` across multiple `ApiScenario` tests, set `DisableTestAppCleanup: true` on every scenario — otherwise PocketBase destroys the test database after the first scenario, and all subsequent scenarios fail with 500 errors.
-
-See `references/go-testing.md` "Shared TestApp Gets Destroyed Between Scenarios" for the full pattern.
