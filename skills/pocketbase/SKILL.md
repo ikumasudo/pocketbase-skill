@@ -91,9 +91,12 @@ Applies to ALL field types: `select` (values, maxSelect), `file` (maxSelect, max
 - [ ] `@collection` references in API rules use `?=` (not `=`) — `=` breaks with 2+ rows
 
 **Go package mode additional checks:**
-- [ ] Migration files use `package migrations` + `func init()` + `m.Register()` structure
+- [ ] Collections created via `pb_collections.py` (not hand-written migration files)
+- [ ] Auto-generated migration files in `pb_migrations/` are committed to git
+- [ ] `migratecmd.MustRegister()` with `Automigrate: true` (dev) is configured in `main.go`
+- [ ] `_ "yourmodule/migrations"` blank import exists in `main.go` (if manual migrations are used)
+- [ ] Manual migration files (seed data, data transforms) use `package migrations` + `func init()` + `m.Register()`
 - [ ] Rules set with `types.Pointer("rule")` (not direct string assignment — `*string` type)
-- [ ] `_ "yourmodule/migrations"` blank import exists in `main.go`
 - [ ] Hooks call `return e.Next()` (omitting causes request hang)
 - [ ] `test_pb_data/` exists and is committed when Go tests are needed
 
@@ -124,9 +127,12 @@ When building a PocketBase application, follow this sequence:
 5. **API rules** — Set security rules (`Read references/api-rules-guide.md`)
    - **Default to `null` (deny all). Open only what is needed.**
    - `null` = superuser only, `""` = anyone including guests
-6. **Create** — Create schema based on mode
-   - **Standalone**: Scripts (`pb_collections.py`) or JS migrations (`pb_migrations/*.js`)
-   - **Go package**: Go migrations (`migrations/*.go`) — `Read references/go-migrations.md`
+6. **Create** — Create collections via Python scripts (both modes)
+   - Use `pb_collections.py create` or `pb_collections.py import --file collections.json`
+   - PocketBase auto-generates migration files (`.js` in standalone, `.go` in Go package mode with `Automigrate: true`)
+   - Commit the auto-generated migration files to git
+   - **Do NOT hand-write migration files for collection schema creation** — let PocketBase generate them
+   - For data transforms, seed data, or raw SQL, see Section 6 (Migrations)
    - Hooks/routes: Standalone uses JSVM (`pb_hooks/*.pb.js`), Go uses Go code — `Read references/go-hooks-routes.md`
 7. **Seed data** — Insert sample records for verification
 8. **Test** — Two complementary test strategies:
@@ -505,17 +511,25 @@ python scripts/pb_backups.py delete pb_backup_20240101120000.zip
 
 ## 6. Migrations
 
-### Auto-Migration (Primary Workflow)
+### Auto-Migration (Primary Workflow — Both Modes)
 
-PocketBase **automatically generates migration files** whenever you change a collection via the Admin UI or the API (e.g., `pb_collections.py create/update`). The generated files are placed in `pb_migrations/` and applied automatically on next startup.
+PocketBase **automatically generates migration files** whenever you change a collection via the Admin UI or the API (e.g., `pb_collections.py create/update`).
 
-**Typical workflow:**
-1. Make schema changes via Admin UI or `pb_collections.py`
-2. PocketBase writes a timestamped `.js` file to `pb_migrations/`
-3. Commit the generated file to git
-4. On deploy, PocketBase runs pending migrations automatically at startup
+| Mode | Auto-generated file format | Directory | Requirement |
+|------|---------------------------|-----------|-------------|
+| Standalone | `.js` | `pb_migrations/` | Enabled by default |
+| Go package | `.go` | `pb_migrations/` | `migratecmd.MustRegister()` with `Automigrate: true` |
 
-You do **not** need to create migration files manually for collection structure changes — they are already generated for you.
+**Do NOT hand-write migration files for collection schema creation** — use `pb_collections.py` and let PocketBase generate them.
+
+**Typical workflow (both modes):**
+1. Start PocketBase (standalone: `./pocketbase serve`, Go: `go run . serve`)
+2. Create/update collections via `pb_collections.py create`, `pb_collections.py import --file collections.json`, or Admin UI
+3. PocketBase writes a timestamped migration file to `pb_migrations/`
+4. Commit the generated file to git
+5. On deploy, PocketBase runs pending migrations automatically at startup
+
+Manual migration files are only for: **seed data, data transforms, raw SQL, and superuser creation**.
 
 ### Manual Migration (for operations not auto-generated)
 
@@ -620,5 +634,5 @@ Validation error example:
 | Go: build & run      | `go build -o myapp . && ./myapp serve`                          | `references/go-framework.md`   |
 | Go: dev run          | `go run . serve`                                                 | `references/go-framework.md`   |
 | Go: create superuser | `go run . superuser create email pw`                             | `references/go-framework.md`   |
-| Go: migration template | `assets/migration-template.go`       | `references/go-migrations.md`  |
+| Go: manual migration template (seed data / data transforms only) | `assets/migration-template.go`       | `references/go-migrations.md`  |
 | Go: run tests          | `go test ./...`                                                  | `references/go-testing.md`     |

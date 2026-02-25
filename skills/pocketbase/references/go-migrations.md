@@ -4,6 +4,24 @@ PocketBase v0.23+ Go migration files — registration, collection creation, fiel
 
 ---
 
+## PREFERRED WORKFLOW: Auto-Migration via Python Scripts
+
+**Do NOT hand-write Go migration files for collection schema creation.**
+
+Instead, use `pb_collections.py` to create/update collections via the REST API, and let PocketBase auto-generate the Go migration files:
+
+1. Ensure `migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{Automigrate: true})` is in `main.go`
+2. Start PocketBase: `go run . serve`
+3. Create collections: `pb_collections.py create '{...}'` or `pb_collections.py import --file collections.json`
+4. PocketBase auto-generates `.go` migration files in `pb_migrations/`
+5. Commit the auto-generated files to git
+
+Manual Go migration files (in `migrations/`) are only for: **seed data, data transforms, raw SQL, and superuser creation**.
+
+The sections below document the manual migration file format for these limited use cases.
+
+---
+
 ## 1. Auto-Migration
 
 When `migratecmd.MustRegister()` is configured with `Automigrate: true`, PocketBase auto-generates Go migration files in `pb_migrations/` whenever you change a collection via the Admin Dashboard or REST API.
@@ -18,7 +36,7 @@ The auto-generated files are complete and ready to commit. You only need to writ
 
 ---
 
-## 2. Migration Registration
+## 2. Migration File Structure (for manual migrations)
 
 ### File Structure
 
@@ -67,7 +85,9 @@ Use the template at `assets/migration-template.go` as a starting point.
 
 ---
 
-## 3. Collection Creation
+## 3. Collection Schema in Manual Migrations (reference only)
+
+> **Reminder:** For collection creation, prefer `pb_collections.py` + auto-migration (see PREFERRED WORKFLOW above). The examples below are reference for understanding auto-generated code or for rare cases where manual migration is unavoidable.
 
 ### Base Collection
 
@@ -217,7 +237,9 @@ collection.AddIndex("idx_posts_published", false, "status, created", "status = '
 
 ---
 
-## 7. Pattern Collection
+## 7. Common Manual Migration Patterns
+
+> These patterns are for **manual migrations only** (seed data, data transforms, raw SQL, rule changes). For collection schema creation, use `pb_collections.py` instead.
 
 ### Add Field to Existing Collection
 

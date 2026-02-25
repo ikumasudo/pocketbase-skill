@@ -409,6 +409,17 @@ Pitfalls specific to using PocketBase as a Go package (`import "github.com/pocke
 
 Both `pb_migrations/*.js` and Go `migrations/*.go` files are loaded at startup. Migration execution order across languages is **by timestamp** (filename prefix), but mixing languages makes the migration history harder to reason about. **Stick to one language for migrations.**
 
+### Schema Creation via Manual Migrations (Anti-Pattern)
+
+**Do NOT hand-write Go migration files to create or modify collection schemas.** Use `pb_collections.py create/import` instead and let PocketBase auto-generate the migration files.
+
+- In Go package mode, ensure `migratecmd.MustRegister()` with `Automigrate: true` is configured in `main.go`
+- Run `go run . serve`, then use `pb_collections.py` to create collections
+- PocketBase auto-generates `.go` migration files in `pb_migrations/`
+- Commit the auto-generated files to git
+
+Manual Go migration files (in `migrations/`) are only for: **seed data, data transforms, raw SQL, and superuser creation.**
+
 ### `types.Pointer()` for Rules
 
 Collection rules are `*string` in Go. You cannot assign a string literal directly:
