@@ -157,6 +157,10 @@ e.Redirect(http.StatusTemporaryRedirect, "/other")
 
 ### Access Auth in Routes
 
+> **Always use `e.Auth` to get the authenticated user in custom routes** — do NOT use `e.RequestInfo().Auth`. The `e.Auth` field is populated by `RequireAuth()` middleware and is always available. `e.RequestInfo()` returns `(*RequestInfo, error)` (2 values) and can fail.
+
+> **Use `e.App` inside route handlers**, not the `app` variable from the outer closure. In tests, `e.App` points to the test app instance, while a closure-captured `app` would point to the original (non-test) app.
+
 ```go
 se.Router.GET("/api/me", func(e *core.RequestEvent) error {
     authRecord := e.Auth
@@ -165,6 +169,53 @@ se.Router.GET("/api/me", func(e *core.RequestEvent) error {
     }
     return e.JSON(http.StatusOK, authRecord)
 }).Bind(apis.RequireAuth())
+```
+
+### Expand/Enrich Records in Routes
+
+Use `apis.EnrichRecords` to expand relation fields on records fetched inside a custom route:
+
+```go
+import "github.com/pocketbase/pocketbase/apis"
+
+// expand single relation
+apis.EnrichRecords(e, records, "author")
+
+// expand multiple relations
+apis.EnrichRecords(e, records, "author", "category")
+
+// expand single record
+apis.EnrichRecord(e, record, "author")
+
+// access expanded data
+if author := record.ExpandedOne("author"); author != nil {
+    name := author.GetString("name")
+}
+if tags := record.ExpandedAll("tags"); len(tags) > 0 {
+    // multi-relation
+}
+```
+
+> **Signature:** `apis.EnrichRecords(e *core.RequestEvent, records []*core.Record, defaultExpands ...string) error` — the first argument is the request event `e`, NOT `app`.
+
+### Error Response Helpers
+
+PocketBase provides typed error methods on `RequestEvent` and `RecordEvent`. Use these instead of manual `e.JSON()`:
+
+| Method | HTTP Status | Usage |
+|--------|-------------|-------|
+| `e.BadRequestError(msg, data)` | 400 | Invalid input, validation failure |
+| `e.UnauthorizedError(msg, data)` | 401 | Missing or invalid auth |
+| `e.ForbiddenError(msg, data)` | 403 | Insufficient permissions |
+| `e.NotFoundError(msg, data)` | 404 | Record/resource not found |
+| `e.InternalServerError(msg, data)` | 500 | Unexpected server error |
+
+```go
+// WRONG — manual JSON
+return e.JSON(http.StatusBadRequest, map[string]string{"message": "invalid input"})
+
+// CORRECT — PocketBase error helper
+return e.BadRequestError("invalid input", nil)
 ```
 
 ---
@@ -282,67 +333,36 @@ err := app.NewMailClient().Send(message)
 
 ## 8. Testing Hooks & Routes
 
-Test custom hooks and routes in-process using `github.com/pocketbase/pocketbase/tests`. No running PocketBase instance needed.
+Use Python E2E tests against a running PocketBase instance. `Read references/e2e-testing.md` for the full guide.
 
-### Setup Pattern
+### Examples
 
-1. **Extract** hook/route registration into a standalone function:
+**Custom route (with auth middleware):**
 
-```go
-// hooks.go
-func bindAppHooks(app core.App) {
-    app.OnServe().BindFunc(func(se *core.ServeEvent) error {
-        se.Router.GET("/api/hello/{name}", func(e *core.RequestEvent) error {
-            name := e.Request.PathValue("name")
-            return e.JSON(http.StatusOK, map[string]string{"message": "Hello " + name})
-        }).Bind(apis.RequireAuth())
-        return se.Next()
-    })
-}
+```python
+# test_e2e.py
+from scripts.pb_e2e_helpers import PocketBaseE2E
+
+e2e = PocketBaseE2E("http://127.0.0.1:8090")
+
+# Guest is denied
+r = e2e.get("/api/hello/world")
+assert r.status_code == 401, f"expected 401, got {r.status_code}"
+
+# Authenticated user gets a response
+token = e2e.authenticate("users", "user@example.com", "password123")
+r = e2e.get("/api/hello/world", token=token)
+assert r.status_code == 200
+assert r.json()["message"] == "Hello world"
 ```
 
-2. **Create** a `TestAppFactory` that applies your hooks to a test app:
+**Hook side effect (default field value set by OnRecordCreate hook):**
 
-```go
-setupTestApp := func(t testing.TB) *tests.TestApp {
-    testApp, err := tests.NewTestApp("./test_pb_data")
-    if err != nil {
-        t.Fatal(err)
-    }
-    bindAppHooks(testApp)
-    return testApp
-}
+```python
+token = e2e.authenticate("users", "user@example.com", "password123")
+r = e2e.create_record("posts", {"title": "Test"}, token=token)
+assert r.status_code == 200
+assert r.json()["status"] == "draft"  # hook sets default
 ```
 
-3. **Write** `ApiScenario` tests:
-
-```go
-scenarios := []tests.ApiScenario{
-    {
-        Name:           "guest denied by RequireAuth",
-        Method:         http.MethodGet,
-        URL:            "/api/hello/world",
-        ExpectedStatus: 401,
-        TestAppFactory: setupTestApp,
-    },
-    {
-        Name:           "hook sets default status on create",
-        Method:         http.MethodPost,
-        URL:            "/api/collections/posts/records",
-        Body:           strings.NewReader(`{"title":"Test"}`),
-        Headers:        map[string]string{"Authorization": userToken},
-        ExpectedStatus: 200,
-        ExpectedContent: []string{`"status":"draft"`},
-        ExpectedEvents: map[string]int{
-            "OnRecordCreate":             1,
-            "OnRecordAfterCreateSuccess": 1,
-        },
-        TestAppFactory: setupTestApp,
-    },
-}
-for _, s := range scenarios {
-    s.Test(t)
-}
-```
-
-**Full reference:** `Read references/go-testing.md` — complete setup guide, token generation, ApiScenario field reference, file upload testing, and gotchas.
+**Full reference:** `Read references/e2e-testing.md`
