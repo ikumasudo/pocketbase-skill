@@ -532,3 +532,29 @@ func BindRoutes(app core.App) {
 ```
 
 In production both are the same, but in Go tests `e.App` correctly points to the test app while the closure-captured `app` may not.
+
+### `isGoRun` Detection Broken on Go 1.24+
+
+The common PocketBase pattern for detecting `go run` no longer works on Go 1.24+:
+
+```go
+// BROKEN on Go 1.24+ — returns false even during go run
+isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
+```
+
+**Background:** Go < 1.24 compiled `go run` binaries into `/tmp/go-buildXXXXXX/exe/binary`. Go 1.24+ places them directly in the build cache (`$GOCACHE`, typically `~/.cache/go-build/...`) to skip redundant copies on subsequent runs. Since the binary path no longer starts with `os.TempDir()` (`/tmp`), the check returns `false` and `Automigrate` is never enabled.
+
+**Fix — check both locations:**
+
+```go
+isGoRun := strings.HasPrefix(os.Args[0], os.TempDir()) ||
+    strings.Contains(os.Args[0], "/go-build")
+```
+
+Alternatively, use an environment variable flag for explicit control:
+
+```go
+isGoRun := os.Getenv("PB_DEV") == "1"
+```
+
+Then run with: `PB_DEV=1 go run . serve`

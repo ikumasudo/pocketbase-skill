@@ -26,8 +26,11 @@ import (
 func main() {
 	app := pocketbase.New()
 
-	// loosely check if it was executed using "go run"
-	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir())
+	// Detect "go run" execution.
+	// Go < 1.24 placed binaries in os.TempDir(); Go 1.24+ places them in
+	// the build cache ($GOCACHE / ~/.cache/go-build), so check both.
+	isGoRun := strings.HasPrefix(os.Args[0], os.TempDir()) ||
+		strings.Contains(os.Args[0], "/go-build")
 
 	migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
 		// auto-create migration files on Dashboard changes (dev only)

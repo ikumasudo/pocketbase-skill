@@ -29,6 +29,7 @@ When `migratecmd.MustRegister()` is configured with `Automigrate: true`, PocketB
 ```go
 migratecmd.MustRegister(app, app.RootCmd, migratecmd.Config{
     Automigrate: isGoRun, // enable only during development
+    // See go-framework.md for the isGoRun detection that works with Go 1.24+.
 })
 ```
 
