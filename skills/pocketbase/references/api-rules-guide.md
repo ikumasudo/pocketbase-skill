@@ -61,6 +61,8 @@ Rules are set per operation (list, view, create, update, delete) on each collect
 | `authRule` | Additional constraint applied during authentication (login). Prevents certain users from logging in even if credentials are correct. |
 | `manageRule` | When satisfied, allows full CRUD bypass on OTHER auth records (like a superuser for that collection). Used for admin panels. |
 
+> **Important:** `manageRule` does NOT override `null` rules. If `createRule`, `updateRule`, or `deleteRule` is `null` (locked), `manageRule` cannot bypass them — only superusers can. To let admin users manage other users, set each rule explicitly (e.g., `"@request.auth.role = 'admin' || @request.auth.id = id"`).
+
 ---
 
 ## Request Macros

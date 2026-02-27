@@ -28,6 +28,9 @@ All resources for this skill are bundled in the skill directory at ``:
 
 When you need to look up PocketBase details or find skill-related files, check this directory first — everything you need is already here. There is no need to search the user's home directory or other projects.
 
+- **Do NOT read the Python source code** in `scripts/`. Use this document's command examples and `--help` output instead.
+- **Read references before writing code:** `references/gotchas.md` (breaking changes), `references/api-rules-guide.md` (rule behavior & status codes), `references/e2e-testing.md` (test patterns).
+
 ## Mode Detection
 
 Determine the project mode:
@@ -44,7 +47,6 @@ Go package mode still uses the same REST API. Python scripts (`pb_collections.py
 
 ## 0. Design Workflow & Decision Making
 
-**Read `references/gotchas.md` FIRST** before writing any PocketBase code.
 Your training data contains outdated v0.22 patterns that will fail on v0.23+.
 Check field JSON: ensure properties are **flat** (no `options` wrapper) and collection key is `fields` (not `schema`).
 
@@ -152,6 +154,7 @@ After creating or modifying collections:
 3. Rule verification: test as non-superuser
    - Use `pb_auth.py --collection users --identity ... --password ...`
    - Verify denied access returns expected behavior
+   Rule denial status codes: listRule→200 (empty items), viewRule→404, createRule→400, updateRule→404, deleteRule→404, null rule→403.
 4. **E2E test** — Required when any collection has a non-`null` API rule, or when custom routes/hooks exist:
    - `Read references/e2e-testing.md`
    - Generate a test script (`test_e2e.py`) in the project root using `pb_e2e_helpers` module
@@ -343,12 +346,14 @@ Collection types:
 
 > **Warning:** PocketBase ships with a `users` auth collection already created. Do **not** `POST` to create a new `users` collection — it will fail with a name conflict. Instead, use `PATCH /api/collections/users` (or `pb_collections.py update users '{...}'`) to customize the existing collection (add fields, change rules, etc.).
 
+> **Warning:** API rules contain single quotes (`''`) which cause shell escaping issues. Always use `--file` when the JSON includes `listRule`, `viewRule`, `createRule`, `updateRule`, or `deleteRule`.
+
 ### Batch Creation (Recommended for multi-collection setups)
 
 When creating 3+ collections (especially with relations), use import instead of individual create calls:
 
 1. Write a single JSON file with all collections
-2. Use collection **names** (not IDs) in `collectionId` for relation fields — PocketBase resolves them during import
+2. In `collectionId`, use collection **names** (PocketBase resolves them during import). Never leave `collectionId` as `""` — it causes a `cannot be blank` error. If name resolution fails, fall back to a 3-phase approach: create without relations → get IDs → update with relations.
 3. Import all at once
 
 ```bash
@@ -395,7 +400,8 @@ This replaces the Phase 1 (create without relations) → Phase 2 (get IDs) → P
 ### Update
 
 ```bash
-python scripts/pb_collections.py update posts '{"listRule":"@request.auth.id != '\'''\''","fields":[{"name":"title","type":"text","required":true},{"name":"content","type":"editor"},{"name":"status","type":"select","values":["draft","published"]}]}'
+# Use --file for JSON containing API rules (avoids shell quote escaping issues)
+python scripts/pb_collections.py update posts --file updates.json
 ```
 
 ### Delete

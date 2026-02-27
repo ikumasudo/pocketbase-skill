@@ -317,6 +317,8 @@ Controls what happens to the relation field when the **target record** is delete
 
 **Note:** `cascadeDelete` is **one-directional** — it triggers when the referenced record is deleted, not when the record containing the field is deleted.
 
+**Important:** When `required: true` and `cascadeDelete: false`, deleting the target record is **blocked** (HTTP 400) because it would leave the owning record in an invalid state. Either delete the owning records first, or set `cascadeDelete: true`.
+
 ---
 
 ## Best Practices
