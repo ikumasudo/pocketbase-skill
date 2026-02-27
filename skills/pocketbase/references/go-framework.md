@@ -93,7 +93,7 @@ After starting, verify with:
 python scripts/pb_health.py
 ```
 
-> **Production deployment:** For Docker, cross-compilation, CGO trade-offs, and Docker Compose configurations, see `Read references/deployment.md` in the `pb-react-spa` skill.
+> **Production deployment:** For Docker, cross-compilation, CGO trade-offs, and Docker Compose configurations, read the `deployment.md` guide under the `pb-react-spa` skill in this repository.
 
 ---
 
